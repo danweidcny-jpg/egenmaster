@@ -2564,7 +2564,7 @@ function escapeHtml(str){
    namespace (see worker.js) so the whole team sees the same
    live data. Set API_BASE to your deployed Worker's URL.
 --------------------------------------------------------- */
-const API_BASE = 'https://YOUR-WORKER-SUBDOMAIN.workers.dev'; // <-- EDIT ME after deploying worker.js (see DEPLOY-README.md)
+const API_BASE = 'https://egen-master-deck-api.danwei.workers.dev'; // <-- EDIT ME after deploying worker.js (see DEPLOY-README.md)
 
 async function kvGet(key){
   const res = await fetch(`${API_BASE}/api/storage?key=${encodeURIComponent(key)}`);
