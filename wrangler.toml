@@ -1,0 +1,8 @@
+name = "egen-master-deck-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Run `wrangler kv:namespace create EGEN_KV` and paste the returned id below.
+[[kv_namespaces]]
+binding = "EGEN_KV"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
