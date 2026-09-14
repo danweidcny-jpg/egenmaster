@@ -2,7 +2,7 @@ name = "egen-master-deck-api"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-# Run `wrangler kv:namespace create EGEN_KV` and paste the returned id below.
+# Cloudflare Workers KV namespace used by the app.
 [[kv_namespaces]]
 binding = "EGEN_KV"
-id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+id = "7e802b23b59b48eba67b85b876475d59"
