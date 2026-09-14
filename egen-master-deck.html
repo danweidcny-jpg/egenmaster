@@ -1,0 +1,2697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGEN Master Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171A18;
+    --paper:#EEF2F1;
+    --paper-raised:#F8F9F6;
+    --glass:rgba(255,255,255,0.58);
+    --glass-strong:rgba(255,255,255,0.78);
+    --pastel-green:#DDF3DF;
+    --pastel-blue:#DDEBFA;
+    --pastel-purple:#E7DDF8;
+    --pastel-yellow:#F5E8BD;
+    --pastel-mint:#D9EFE8;
+    --pastel-coral:#F5DADB;
+    --coral:#E1502F;
+    --coral-deep:#B4321A;
+    --gold:#C98A1E;
+    --teal:#3E8F76;
+    --teal-deep:#146C43;
+    --line:rgba(23,26,24,0.09);
+    --muted:#717671;
+    --accent:#222824;
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:20px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(195,210,255,.45), transparent 35%),
+      radial-gradient(circle at 80% 80%, rgba(189,235,209,.45), transparent 35%),
+      radial-gradient(circle at 60% 0%, rgba(231,221,248,.35), transparent 40%);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  ::selection{background:var(--coral); color:white;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- App shell ---------- */
+  #app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  header.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 28px;
+    border-bottom:1px solid var(--line);
+    background:var(--glass-strong);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .wordmark{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+  }
+  .wordmark .mark{
+    width:34px;height:34px;
+    border-radius:11px;
+    background:linear-gradient(135deg, var(--pastel-blue), var(--pastel-purple));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-weight:800;
+    color:var(--accent);
+    font-size:15px;
+    flex-shrink:0;
+  }
+  .wordmark h1{font-size:20px;}
+  .wordmark span.sub{font-size:12.5px; color:var(--muted); font-weight:500;}
+
+  nav.tabs{
+    display:flex;
+    gap:6px;
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    padding:4px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.6);
+  }
+  nav.tabs button{
+    border:none;
+    background:transparent;
+    padding:9px 16px;
+    border-radius:11px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .2s ease;
+    white-space:nowrap;
+  }
+  nav.tabs button.active{
+    background:var(--accent);
+    color:white;
+  }
+
+  main{
+    flex:1;
+    max-width:1080px;
+    width:100%;
+    margin:0 auto;
+    padding:36px 28px 100px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .eyebrow{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .page-title{font-size:28px; margin-bottom:4px;}
+  .page-sub{color:var(--muted); font-size:14.5px; max-width:60ch; margin-bottom:28px;}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--glass);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:var(--radius-lg);
+    box-shadow:0 8px 30px rgba(30,40,35,0.06);
+    padding:24px;
+  }
+  textarea{
+    width:100%;
+    min-height:150px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:16px;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    resize:vertical;
+    background:var(--paper-raised);
+    color:var(--ink);
+  }
+  textarea:focus, select:focus, input:focus{
+    outline:2px solid var(--coral);
+    outline-offset:1px;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:none;
+    border-radius:11px;
+    padding:12px 20px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--accent); color:white;}
+  .btn-primary:hover{opacity:.88;}
+  .btn-primary:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-ghost{background:var(--glass); color:var(--ink); border:1px solid rgba(255,255,255,0.7);}
+  .btn-ghost:hover{background:var(--glass-strong);}
+
+  .row{display:flex; gap:16px; flex-wrap:wrap;}
+  .col{flex:1; min-width:220px;}
+
+  /* ---------- Effort badges ---------- */
+  .effort-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 16px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:13.5px;
+  }
+  .effort-senang{background:var(--pastel-green); color:#146C43;}
+  .effort-boleh{background:var(--pastel-yellow); color:#8A5B00;}
+  .effort-sweat{background:var(--pastel-coral); color:#B4321A;}
+
+  /* ---------- Generated result ---------- */
+  #resultBlock{
+    margin-top:28px;
+    display:none;
+  }
+  .brief-title{font-size:22px; margin:14px 0 2px;}
+  .team-ready-box{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:18px;
+    margin-top:14px;
+    font-size:14px;
+  }
+  .point-list{list-style:none; margin:0; padding:0;}
+  .point-list li{
+    display:flex;
+    gap:10px;
+    padding:8px 0;
+    border-top:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .point-list li:first-child{border-top:none; padding-top:0;}
+  .point-list .point-label{
+    min-width:130px;
+    flex-shrink:0;
+    font-weight:700;
+    color:var(--teal-deep);
+  }
+  .asks-list{list-style:none; margin:10px 0 0; padding:0;}
+  .asks-list li{
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    padding:6px 0;
+    font-size:13.5px;
+  }
+  .asks-list li::before{
+    content:'💬';
+    flex-shrink:0;
+  }
+  .original-brief-quote{
+    margin-top:14px;
+    padding:12px 14px;
+    border-left:3px solid var(--line);
+    font-size:12.5px;
+    color:var(--muted);
+    font-style:italic;
+    white-space:pre-wrap;
+  }
+  .concepts-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:14px;
+    margin-top:14px;
+  }
+  .concept-card{
+    background:var(--accent);
+    color:white;
+    border-radius:var(--radius-md);
+    padding:18px;
+  }
+  .concept-card h4{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    font-size:16.5px;
+    margin-bottom:8px;
+    color:var(--pastel-yellow);
+  }
+  .concept-card p{font-size:13.5px; color:#E7E5DD; margin:0;}
+  .concept-card .suggestions-label{
+    font-size:11px;
+    font-weight:700;
+    color:#B9B6A8;
+    margin:14px 0 8px;
+  }
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    background:rgba(244,183,64,0.14);
+    border:1px solid rgba(244,183,64,0.4);
+    color:var(--gold);
+    font-size:12px;
+    font-weight:600;
+    padding:5px 10px;
+    border-radius:999px;
+  }
+
+  .assign-panel{
+    margin-top:24px;
+    padding-top:22px;
+    border-top:1px dashed var(--line);
+  }
+  label.field-label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  select, input[type="date"]{
+    width:100%;
+    padding:11px 13px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    font-size:14px;
+    color:var(--ink);
+  }
+
+  .loading-line{
+    display:flex; align-items:center; gap:10px;
+    color:var(--muted); font-size:14px;
+    margin-top:16px;
+  }
+  .spinner{
+    width:16px;height:16px;
+    border:2px solid var(--line);
+    border-top-color:var(--coral);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .error-box{
+    margin-top:16px;
+    background:#FBDAD3;
+    color:#7A2314;
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:13.5px;
+  }
+
+  /* ---------- Team dashboard ---------- */
+  .region-heading{
+    font-size:13px;
+    text-transform:none;
+    font-weight:700;
+    color:var(--teal-deep);
+    margin:26px 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .region-heading:first-of-type{margin-top:0;}
+  .region-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);}
+
+  .member-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px,1fr));
+    gap:14px;
+  }
+  .member-card{
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:var(--radius-md);
+    box-shadow:0 8px 30px rgba(30,40,35,0.05);
+    padding:16px;
+  }
+  .member-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .avatar{
+    width:38px;height:38px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--pastel-mint), var(--pastel-blue));
+    color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .member-name{font-weight:600; font-size:14.5px;}
+  .member-load{font-size:12px; color:var(--muted);}
+  .member-briefs{list-style:none; margin:0; padding:0; font-size:12.5px;}
+  .member-briefs li{
+    padding:6px 0;
+    border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; gap:8px;
+  }
+  .member-briefs li:first-child{border-top:none;}
+  .due-tag{color:var(--coral-deep); font-weight:600; white-space:nowrap;}
+
+  /* active briefs table */
+  .brief-list{margin-top:34px;}
+  .brief-row{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .brief-row .info{flex:1; min-width:200px;}
+  .brief-row .info h4{font-size:15px; margin-bottom:3px;}
+  .brief-row .meta{font-size:12.5px; color:var(--muted);}
+  .status-select{
+    width:auto;
+    min-width:140px;
+    padding:8px 12px;
+    font-size:13px;
+    font-weight:600;
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--muted);
+  }
+  .empty-state h3{color:var(--ink); font-size:17px; margin-bottom:6px;}
+
+  /* archive table */
+  table.archive-table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--paper-raised);
+    border-radius:var(--radius-md);
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  table.archive-table th, table.archive-table td{
+    text-align:left;
+    padding:12px 16px;
+    font-size:13.5px;
+    border-bottom:1px solid var(--line);
+  }
+  table.archive-table th{
+    background:var(--paper);
+    color:var(--muted);
+    font-weight:600;
+    font-size:12px;
+  }
+  table.archive-table tr:last-child td{border-bottom:none;}
+
+  /* ---------- Calendar ---------- */
+  .cal-toggle{
+    display:flex;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:3px;
+  }
+  .cal-toggle-btn{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:8px 10px;
+    border-radius:7px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .cal-toggle-btn.active{background:var(--ink); color:white;}
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:6px;
+  }
+  .cal-dow{
+    text-align:center;
+    font-size:11px;
+    font-weight:700;
+    color:var(--muted);
+    padding:6px 0;
+  }
+  .cal-cell{
+    min-height:78px;
+    border-radius:9px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    padding:6px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .cal-cell.empty{background:transparent; border:none;}
+  .cal-cell.today{border-color:var(--coral); border-width:2px;}
+  .cal-daynum{font-size:11.5px; font-weight:700; color:var(--muted);}
+  .cal-item{
+    font-size:10.5px;
+    font-weight:600;
+    padding:3px 6px;
+    border-radius:6px;
+    background:rgba(31,111,107,0.12);
+    color:var(--teal-deep);
+    line-height:1.3;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .agenda-row{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:9px;
+  }
+  .agenda-date{
+    font-weight:700;
+    font-size:13.5px;
+    color:var(--coral-deep);
+    min-width:80px;
+  }
+  .agenda-info{flex:1; min-width:180px;}
+  .agenda-info h4{font-size:14.5px; margin-bottom:2px;}
+  .agenda-info .meta{font-size:12px; color:var(--muted);}
+  .wa-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:#25D366;
+    color:white;
+    border:none;
+    border-radius:9px;
+    padding:9px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .wa-btn:hover{opacity:.9;}
+  .wa-btn-sm{padding:6px 10px; font-size:11.5px; border-radius:7px;}
+  .phone-input{
+    margin-top:8px;
+    width:100%;
+    padding:7px 9px;
+    font-size:12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+  }
+
+  @media (max-width:600px){
+    .cal-cell{min-height:58px;}
+    .cal-item{display:none;}
+    .cal-cell.has-items::after{
+      content:'';
+      width:5px;height:5px;border-radius:50%;
+      background:var(--coral);
+      align-self:center;
+    }
+  }
+
+  /* ---------- Brief detail modal ---------- */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(28,27,46,0.55);
+    z-index:100;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 16px;
+    overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    background:var(--glass-strong);
+    backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,0.7);
+    border-radius:var(--radius-lg);
+    max-width:640px;
+    width:100%;
+    padding:30px;
+    position:relative;
+    max-height:calc(100vh - 80px);
+    overflow-y:auto;
+  }
+  .modal-close{
+    position:absolute;
+    top:16px; right:16px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:50%;
+    width:32px; height:32px;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--muted);
+  }
+  .modal-close:hover{color:var(--ink);}
+  .modal-meta-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    font-size:12.5px;
+    color:var(--muted);
+    margin:10px 0 18px;
+  }
+  .brief-row.clickable, .member-briefs li.clickable{
+    cursor:pointer;
+  }
+  .brief-row.clickable:hover{border-color:var(--coral);}
+  .member-briefs li.clickable:hover{color:var(--coral-deep);}
+
+  /* ---------- Who-am-I picker ---------- */
+  .whoami-overlay{
+    position:fixed; inset:0;
+    background:rgba(28,27,46,0.6);
+    z-index:200;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .whoami-overlay.open{display:flex;}
+  .whoami-card{
+    background:var(--glass-strong);
+    backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,0.7);
+    border-radius:var(--radius-lg);
+    padding:32px;
+    max-width:440px;
+    width:100%;
+  }
+  .whoami-card h2{font-size:22px; margin-bottom:6px;}
+  .whoami-card p{color:var(--muted); font-size:14px; margin:0 0 20px;}
+  .whoami-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .whoami-btn{
+    display:flex; align-items:center; gap:10px;
+    border:1px solid rgba(255,255,255,0.7);
+    background:var(--glass);
+    border-radius:12px;
+    padding:12px 14px;
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    text-align:left;
+    transition:all .2s ease;
+  }
+  .whoami-btn:hover{border-color:var(--coral); background:var(--glass-strong);}
+  .whoami-btn .avatar{width:30px; height:30px; font-size:12px;}
+  .whoami-office-label{
+    grid-column:1 / -1;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--teal-deep);
+    margin-top:8px;
+  }
+  .whoami-office-label:first-child{margin-top:0;}
+  .switch-user-btn{
+    background:transparent; border:none;
+    color:var(--muted); font-size:12px; font-weight:600;
+    cursor:pointer; text-decoration:underline;
+    padding:0; margin-left:10px;
+  }
+  .switch-user-btn:hover{color:var(--coral-deep);}
+
+  /* ---------- Status flags ---------- */
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 12px; border-radius:999px;
+    font-size:12px; font-weight:700;
+    border:none; cursor:pointer;
+  }
+  .status-free{background:#DDF3DF; color:#146C43;}
+  .status-busy{background:#F5DADB; color:#B4321A;}
+  .status-capacity{background:#F5E8BD; color:#8A5B00;}
+  .status-dot{width:8px; height:8px; border-radius:50%;}
+  .status-dot.status-free{background:#2FA866;}
+  .status-dot.status-busy{background:#E1502F;}
+  .status-dot.status-capacity{background:#E0A020;}
+  .status-picker{display:flex; gap:8px; flex-wrap:wrap;}
+  .status-picker button.status-pill{opacity:.45;}
+  .status-picker button.status-pill.selected{opacity:1; outline:2px solid var(--ink); outline-offset:1px;}
+
+  /* ---------- Greeting / my day header ---------- */
+  .greeting-row{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:12px;
+    margin-bottom:22px;
+  }
+  .greeting-row h2{font-size:24px;}
+
+  /* ---------- Bento summary row (Today / Overdue / Waiting / Upcoming) ---------- */
+  .bento-summary-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    margin-bottom:30px;
+  }
+  .bento-card{
+    border-radius:var(--radius-lg);
+    padding:18px 20px;
+    backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.6);
+    box-shadow:0 8px 30px rgba(30,40,35,0.05);
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .bento-card:hover{transform:translateY(-2px);}
+  .bento-card .bento-icon{font-size:20px; margin-bottom:10px; display:block;}
+  .bento-card .bento-label{font-size:12.5px; font-weight:600; color:var(--muted);}
+  .bento-card .bento-number{font-family:'Plus Jakarta Sans',sans-serif; font-size:32px; font-weight:800; margin:2px 0 4px; color:var(--accent);}
+  .bento-card .bento-sub{font-size:11.5px; color:var(--muted);}
+  .bento-today{background:var(--pastel-blue);}
+  .bento-overdue{background:var(--pastel-coral);}
+  .bento-waiting{background:var(--pastel-yellow);}
+  .bento-upcoming{background:var(--pastel-mint);}
+
+  .section-block{margin-bottom:34px;}
+  .section-block h3{font-size:17px; margin-bottom:12px;}
+
+  /* ---------- Priority tab bar (Today / Overdue / Waiting / Upcoming) ---------- */
+  .priority-tabs{
+    display:flex; gap:6px; flex-wrap:wrap;
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:14px;
+    padding:4px;
+    margin-bottom:14px;
+  }
+  .priority-tab{
+    display:flex; align-items:center; gap:7px;
+    border:none; background:transparent;
+    padding:9px 15px; border-radius:11px;
+    font-size:13px; font-weight:600; color:var(--muted);
+    cursor:pointer; transition:all .2s ease;
+  }
+  .priority-tab.active{background:var(--accent); color:white;}
+  .priority-tab .tab-count{
+    font-size:11px; font-weight:700;
+    background:rgba(23,26,24,0.08);
+    padding:1px 7px; border-radius:999px;
+  }
+  .priority-tab.active .tab-count{background:rgba(255,255,255,0.25);}
+
+  /* ---------- Priority list rows (two-line, decluttered) ---------- */
+  .flat-row{
+    background:var(--glass);
+    backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:var(--radius-md);
+    padding:13px 16px;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:12px;
+    margin-bottom:8px;
+    transition:all .2s ease;
+  }
+  .flat-row.clickable{cursor:pointer;}
+  .flat-row.clickable:hover{border-color:var(--coral);}
+  .flat-row-main{display:flex; align-items:flex-start; gap:10px; flex:1; min-width:0;}
+  .flat-row-main input[type="checkbox"]{margin-top:2px; width:17px; height:17px; accent-color:var(--teal); flex-shrink:0;}
+  .flat-row-icon{width:17px; text-align:center; flex-shrink:0; margin-top:1px; font-size:13px;}
+  .flat-row-text{min-width:0;}
+  .flat-row-title{
+    font-weight:600; font-size:13.5px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .flat-row-meta{
+    font-size:11.5px; color:var(--muted); margin-top:3px;
+    display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+  }
+  .flat-row-side{flex-shrink:0; text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+  .flat-when{font-size:11.5px; color:var(--muted); font-weight:600; white-space:nowrap;}
+  .mini-status-select{
+    font-size:11px; font-weight:600;
+    padding:4px 8px; border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .proposal-tag{
+    background:var(--pastel-purple); color:#5B3E99;
+    font-size:11px; font-weight:700;
+    padding:2px 8px; border-radius:999px;
+    white-space:nowrap;
+  }
+  .waiting-tag{
+    background:var(--pastel-yellow); color:#8A5B00;
+    font-size:11px; font-weight:700;
+    padding:3px 9px; border-radius:999px;
+    white-space:nowrap;
+  }
+
+  /* ---------- Project cards ---------- */
+  .project-card{
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:var(--radius-md);
+    box-shadow:0 8px 30px rgba(30,40,35,0.05);
+    padding:16px 18px;
+    margin-bottom:12px;
+  }
+  .project-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .project-head h4{font-size:15px;}
+  .project-meta-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .progress-track{
+    width:70px; height:6px; border-radius:999px;
+    background:rgba(23,26,24,0.08); overflow:hidden; flex-shrink:0;
+  }
+  .progress-fill{height:100%; background:linear-gradient(90deg, var(--teal), var(--pastel-mint)); border-radius:999px;}
+  .progress-frac{font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap;}
+  .overdue-tag{
+    background:var(--pastel-coral); color:#B4321A;
+    font-size:11px; font-weight:700;
+    padding:3px 9px; border-radius:999px;
+    white-space:nowrap;
+  }
+  .task-list{list-style:none; margin:10px 0 0; padding:0;}
+  .task-list li{
+    display:flex; align-items:center; gap:10px;
+    padding:7px 0;
+    border-top:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .task-list li:first-child{border-top:none;}
+  .task-list li.done span.task-text{color:var(--muted); text-decoration:line-through;}
+  .task-list input[type="checkbox"]{width:17px; height:17px; flex-shrink:0; accent-color:var(--teal);}
+  .task-text{flex:1;}
+  .task-due{font-size:11px; color:var(--muted); white-space:nowrap;}
+  .task-due.overdue{color:var(--coral-deep); font-weight:700;}
+  .task-waiting-btn{
+    background:transparent; border:none; font-size:14px;
+    cursor:pointer; padding:2px 3px; flex-shrink:0; opacity:.4;
+  }
+  .task-waiting-btn.active{opacity:1;}
+  .task-del{
+    background:transparent; border:none; color:var(--muted);
+    cursor:pointer; font-size:15px; padding:2px 4px; flex-shrink:0;
+  }
+  .task-del:hover{color:var(--coral-deep);}
+  .add-task-row{
+    display:flex; gap:8px; margin-top:10px;
+    padding-top:10px; border-top:1px dashed var(--line);
+  }
+  .add-task-row input{
+    flex:1; padding:8px 11px; font-size:13px;
+    border:1px solid var(--line); border-radius:8px;
+    background:var(--paper-raised);
+  }
+  .add-task-row input[type="date"]{flex:none; width:130px;}
+  .project-del-btn{
+    background:transparent; border:none; color:var(--muted);
+    cursor:pointer; font-size:12px; text-decoration:underline;
+  }
+  .project-del-btn:hover{color:var(--coral-deep);}
+  .new-project-card{
+    background:var(--glass);
+    backdrop-filter:blur(16px);
+    border:1px dashed rgba(23,26,24,0.18);
+    border-radius:var(--radius-md);
+    padding:16px 18px;
+    margin-top:6px;
+  }
+  .new-project-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .new-project-row input[type="text"]{flex:2; min-width:160px;}
+  .new-project-row input[type="date"]{flex:1; min-width:130px;}
+  .new-project-row input{
+    padding:10px 12px; font-size:13.5px;
+    border:1px solid var(--line); border-radius:9px;
+    background:var(--paper);
+  }
+  .other-project-list{list-style:none; margin:6px 0 0; padding:0;}
+  .other-project-list li{
+    padding:6px 0; border-top:1px solid var(--line);
+    font-size:12.5px; display:flex; justify-content:space-between; gap:8px; align-items:center;
+  }
+  .other-project-list li:first-child{border-top:none;}
+
+  /* ---------- Confetti celebration ---------- */
+  .confetti-overlay{
+    position:fixed; inset:0; z-index:300;
+    pointer-events:none;
+    overflow:hidden;
+    display:none;
+  }
+  .confetti-overlay.active{display:block;}
+  .confetti-piece{
+    position:absolute; top:-20px;
+    width:9px; height:14px;
+    opacity:0.9;
+    animation:confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall{
+    to{ transform:translateY(110vh) rotate(600deg); opacity:0.4; }
+  }
+  .celebrate-toast{
+    position:fixed;
+    top:24px; left:50%;
+    transform:translateX(-50%) translateY(-20px);
+    background:var(--ink); color:white;
+    padding:14px 22px; border-radius:14px;
+    font-weight:700; font-size:14.5px;
+    z-index:301;
+    opacity:0;
+    transition:opacity .3s ease, transform .3s ease;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  }
+  .celebrate-toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 720px){
+    header.topbar{padding:16px 18px;}
+    header.topbar nav.tabs{display:none;}
+    main{padding:24px 18px 100px;}
+    .bento-summary-row{grid-template-columns:1fr 1fr;}
+    nav.bottom-tabs{
+      display:flex;
+      position:fixed;
+      bottom:0; left:0; right:0;
+      background:var(--glass-strong);
+      backdrop-filter:blur(20px);
+      border-top:1px solid var(--line);
+      z-index:30;
+      padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+    }
+    nav.bottom-tabs button{
+      flex:1;
+      border:none;
+      background:transparent;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:3px;
+      padding:8px 4px;
+      font-size:11px;
+      font-weight:600;
+      color:var(--muted);
+      cursor:pointer;
+    }
+    nav.bottom-tabs button.active{color:var(--coral-deep);}
+    nav.bottom-tabs button .dot{
+      width:6px;height:6px;border-radius:50%;
+      background:transparent;
+    }
+    nav.bottom-tabs button.active .dot{background:var(--coral-deep);}
+  }
+  @media (min-width: 721px){
+    nav.bottom-tabs{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="wordmark">
+      <div class="mark">EM</div>
+      <div>
+        <h1>EGEN Master Deck</h1>
+        <div class="sub"><span id="currentUserLabel" style="font-weight:700; color:var(--accent);"></span> &middot; <span id="syncStatus" style="font-weight:600;">Loading...</span><button class="switch-user-btn" id="switchUserBtn" type="button">Switch user</button></div>
+      </div>
+    </div>
+    <nav class="tabs" id="topTabs">
+      <button data-view="team" class="active">Board</button>
+      <button data-view="new">New Brief</button>
+      <button data-view="calendar">Calendar</button>
+      <button data-view="archive">Archive</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ===================== NEW BRIEF VIEW ===================== -->
+    <section class="view" id="view-new">
+      <div class="eyebrow">Step 1</div>
+      <h2 class="page-title">Drop the client brief in</h2>
+      <p class="page-sub">Paste it in as-is — messy, half-formed, whatever the client sent you. We'll tidy it up for the team and pull a few angles to pitch with.</p>
+
+      <div class="card">
+        <label class="field-label" for="rawBrief">Raw client brief</label>
+        <textarea id="rawBrief" placeholder="e.g. Client wants a year-end dinner for 300 pax, KLCC area, budget around RM80k, needs a theme, date is flexible in Dec, wants something that feels premium but not overly corporate..."></textarea>
+        <div style="font-size:12px; color:var(--muted); margin-top:8px;">Mentioning pax count, budget, location, and event type (e.g. "wedding," "annual dinner," "product launch") gets you a sharper match.</div>
+        <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="generateBtn">Beautify &amp; generate ideas</button>
+          <button class="btn btn-ghost" id="clearBtn" type="button">Clear</button>
+        </div>
+        <div class="loading-line" id="loadingLine" style="display:none;">
+          <div class="spinner"></div>
+          <span>Studying the brief and breaking it into points...</span>
+        </div>
+        <div class="error-box" id="errorBox" style="display:none;"></div>
+      </div>
+
+      <div id="resultBlock">
+        <div class="card" style="margin-top:0;">
+          <div id="effortBadgeWrap"></div>
+          <div class="brief-title" id="briefTitleOut"></div>
+          <div class="team-ready-box" id="teamReadyOut"></div>
+
+          <div class="eyebrow" style="margin-top:22px;">3 story themes to pitch with</div>
+          <div class="concepts-grid" id="conceptsOut"></div>
+
+          <div class="assign-panel">
+            <div class="eyebrow">Step 2</div>
+            <h3 style="font-size:17px; margin-bottom:14px;">Assign it out</h3>
+            <div class="row">
+              <div class="col">
+                <label class="field-label" for="assigneeSelect">Assign to</label>
+                <select id="assigneeSelect"></select>
+              </div>
+              <div class="col">
+                <label class="field-label" for="dueDateInput">Due date</label>
+                <input type="date" id="dueDateInput">
+              </div>
+            </div>
+            <button class="btn btn-primary" id="assignBtn" style="margin-top:16px;">Assign brief</button>
+            <div id="assignConfirm" style="display:none; margin-top:12px; font-size:13.5px; color:var(--teal-deep); font-weight:600;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== BOARD VIEW (My Day + Team) ===================== -->
+    <section class="view active" id="view-team">
+      <div class="greeting-row">
+        <div>
+          <div class="eyebrow">Dashboard</div>
+          <h2 id="greetingOut">Hey there</h2>
+        </div>
+        <div class="status-picker" id="myStatusPicker"></div>
+      </div>
+
+      <div class="bento-summary-row" id="bentoSummaryRow"></div>
+
+      <div class="new-project-card" style="margin-bottom:34px;">
+        <div class="eyebrow" style="margin-bottom:10px;">Add a project or task</div>
+        <div class="new-project-row">
+          <input type="text" id="newProjectTitle" placeholder="Project or event name (e.g. Bridge Data Center D&amp;D KL)">
+          <input type="date" id="newProjectDue" title="Optional due date">
+          <button class="btn btn-primary" id="addProjectBtn" type="button">Add project</button>
+        </div>
+        <div id="newProjectError" style="display:none; margin-top:10px; font-size:12.5px; color:var(--coral-deep); font-weight:600;"></div>
+      </div>
+
+      <div class="section-block">
+        <div class="priority-tabs" id="priorityTabs">
+          <button class="priority-tab active" data-tab="today">Today <span class="tab-count" id="countToday">0</span></button>
+          <button class="priority-tab" data-tab="overdue">Overdue <span class="tab-count" id="countOverdue">0</span></button>
+          <button class="priority-tab" data-tab="waiting" title="Waiting on client / supplier">Waiting <span class="tab-count" id="countWaiting">0</span></button>
+          <button class="priority-tab" data-tab="upcoming">Upcoming <span class="tab-count" id="countUpcoming">0</span></button>
+        </div>
+        <div id="priorityList"></div>
+      </div>
+
+      <div class="section-block">
+        <h3>Project progress</h3>
+        <div id="sectionProjects"></div>
+      </div>
+
+      <div class="eyebrow" style="margin-top:38px;">Team</div>
+      <h2 class="page-title">Who's got room right now</h2>
+      <p class="page-sub">Everyone's status, projects, and active briefs, grouped by office — visible to the whole team, not just management.</p>
+
+      <div id="teamGrid"></div>
+
+      <div class="brief-list">
+        <div class="eyebrow" style="margin-top:8px;">Active briefs</div>
+        <h3 style="font-size:18px; margin-bottom:16px;">In progress</h3>
+        <div id="activeBriefList"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CALENDAR VIEW ===================== -->
+    <section class="view" id="view-calendar">
+      <div class="eyebrow">Due dates</div>
+      <h2 class="page-title">Calendar</h2>
+      <p class="page-sub">Everyone's deadlines in one place — switch to a personal view to see just one person's plate.</p>
+
+      <div class="row" style="align-items:center; margin-bottom:18px;">
+        <div class="col" style="max-width:260px; min-width:180px;">
+          <div class="cal-toggle" id="calToggle">
+            <button class="cal-toggle-btn active" data-mode="team">Team view</button>
+            <button class="cal-toggle-btn" data-mode="personal">Personal view</button>
+          </div>
+        </div>
+        <div class="col" id="calPersonWrap" style="display:none; max-width:260px; min-width:180px;">
+          <select id="calPersonSelect"></select>
+        </div>
+        <div class="col" style="display:flex; justify-content:flex-end; gap:8px; min-width:160px;">
+          <button class="btn btn-ghost" id="calPrev" style="padding:9px 14px;">&larr;</button>
+          <div id="calMonthLabel" style="align-self:center; font-weight:700; font-size:14.5px; min-width:120px; text-align:center;"></div>
+          <button class="btn btn-ghost" id="calNext" style="padding:9px 14px;">&rarr;</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:14px;">
+        <div id="calGrid" class="cal-grid"></div>
+      </div>
+
+      <div class="eyebrow" style="margin-top:28px;">Agenda</div>
+      <h3 style="font-size:17px; margin-bottom:14px;">Upcoming, in order</h3>
+      <div id="calAgenda"></div>
+    </section>
+
+    <!-- ===================== ARCHIVE VIEW ===================== -->
+    <section class="view" id="view-archive">
+      <div class="eyebrow">Year-end record</div>
+      <h2 class="page-title">Approved &amp; sent</h2>
+      <p class="page-sub">Everything that's been sent to the client lives here, kept out of the active list so the team's view stays clean.</p>
+
+      <div id="archiveWrap"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-tabs" id="bottomTabs">
+    <button data-view="team" class="active"><span class="dot"></span>Board</button>
+    <button data-view="new"><span class="dot"></span>New Brief</button>
+    <button data-view="calendar"><span class="dot"></span>Calendar</button>
+    <button data-view="archive"><span class="dot"></span>Archive</button>
+  </nav>
+
+  <div class="modal-overlay" id="briefModalOverlay">
+    <div class="modal-card" id="briefModalCard">
+      <button class="modal-close" id="briefModalClose" aria-label="Close">&times;</button>
+      <div id="briefModalContent"></div>
+    </div>
+  </div>
+
+  <div class="whoami-overlay" id="whoamiOverlay">
+    <div class="whoami-card">
+      <h2>Who's checking in?</h2>
+      <p>Pick your name — this device will remember you next time. You can switch anytime from the top bar.</p>
+      <div class="whoami-grid" id="whoamiGrid"></div>
+    </div>
+  </div>
+
+  <div class="confetti-overlay" id="confettiOverlay"></div>
+  <div class="celebrate-toast" id="celebrateToast"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   STATE (in-memory only — resets on page reload; this is a
+   working prototype, not wired to a database yet)
+--------------------------------------------------------- */
+const TEAM = [
+  { id:'m1', name:'Danwei (JB)', office:'JB', phone:'' },
+  { id:'m2', name:'Xinyee', office:'JB', phone:'' },
+  { id:'m3', name:'Eunice', office:'JB', phone:'' },
+  { id:'m4', name:'Xiang Ting', office:'JB', phone:'' },
+  { id:'m5', name:'Danwei (KL)', office:'KL', phone:'' },
+  { id:'m6', name:'Chen', office:'KL', phone:'' },
+  { id:'m7', name:'Liwen', office:'KL', phone:'' },
+  { id:'m8', name:'Rachel', office:'KL', phone:'' },
+  { id:'m9', name:'Ethan', office:'KL', phone:'' },
+  { id:'m10', name:'Esther', office:'KL', phone:'' },
+];
+
+let briefs = []; // {id, title, rawBrief, teamReadyBrief, concepts, effortLevel, effortReason, assigneeId, dueDate, status, createdAt, approvedAt}
+let briefCounter = 1;
+let pendingResult = null; // holds the just-generated (not yet assigned) result
+
+/* daily task/project tracking (self-updated, replaces the WhatsApp daily update) */
+let projects = []; // {id, ownerId, title, dueDate, tasks:[{id,text,done,dueDate}], createdAt}
+let projectCounter = 1;
+let taskCounter = 1;
+let statuses = {}; // memberId -> 'free' | 'busy' | 'capacity'
+let currentUserId = null; // who is using this device right now
+
+const STATUS_META = {
+  free:     { label:'Free',         cls:'status-free',     emoji:'🟢' },
+  busy:     { label:'Busy',         cls:'status-busy',      emoji:'🔴' },
+  capacity: { label:'At Capacity',  cls:'status-capacity',  emoji:'🟡' },
+};
+
+const EFFORT_META = {
+  senang: { label:'Senang Je', sub:'Easy — quick turnaround', cls:'effort-senang', emoji:'🟢' },
+  boleh:  { label:'Boleh Punya', sub:'Medium — needs proper thinking', cls:'effort-boleh', emoji:'🟡' },
+  sweat:  { label:'Confirm Sweat One', sub:'Hard core — bring your A-game', cls:'effort-sweat', emoji:'🔴' },
+};
+
+const STATUS_OPTIONS = ['Assigned','Submitted','Revised','Approved'];
+
+/* ---------------------------------------------------------
+   TAB NAVIGATION
+--------------------------------------------------------- */
+function switchView(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('#topTabs button, #bottomTabs button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if(view === 'team') renderBoard();
+  if(view === 'archive') renderArchive();
+  if(view === 'calendar') renderCalendar();
+}
+document.getElementById('topTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  switchView(btn.dataset.view);
+});
+document.getElementById('bottomTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  switchView(btn.dataset.view);
+});
+document.getElementById('switchUserBtn').addEventListener('click', openWhoami);
+document.getElementById('addProjectBtn').addEventListener('click', ()=>{
+  const titleInput = document.getElementById('newProjectTitle');
+  const dueInput = document.getElementById('newProjectDue');
+  const errorEl = document.getElementById('newProjectError');
+  const title = titleInput.value.trim();
+  if(!currentUserId){ openWhoami(); return; }
+  if(!title){
+    errorEl.textContent = 'Give the project a name first.';
+    errorEl.style.display = 'block';
+    titleInput.focus();
+    return;
+  }
+  errorEl.style.display = 'none';
+  projects.push({ id:'p'+(projectCounter++), ownerId: currentUserId, title, dueDate: dueInput.value || '', tasks:[], createdAt: todayStr() });
+  titleInput.value = '';
+  dueInput.value = '';
+  saveTasksToStorage();
+  renderBoard();
+});
+
+/* delegated listeners for dynamically-rendered project/task controls */
+document.addEventListener('change', (e)=>{
+  const toggle = e.target.closest('[data-task-toggle]');
+  if(toggle){ toggleTask(toggle.dataset.taskToggle); return; }
+  const briefStatus = e.target.closest('[data-brief-status]');
+  if(briefStatus){ updateBriefStatus(briefStatus.dataset.briefStatus, briefStatus.value); return; }
+});
+document.addEventListener('click', (e)=>{
+  if(e.target.closest('select')) return; // let dropdowns (status pickers) work without triggering row clicks
+  const taskDel = e.target.closest('[data-task-del]');
+  if(taskDel){ deleteTask(taskDel.dataset.taskDel); return; }
+  const projDel = e.target.closest('[data-project-del]');
+  if(projDel){ if(confirm('Delete this project and its tasks?')) deleteProject(projDel.dataset.projectDel); return; }
+  const addTaskBtn = e.target.closest('[data-add-task-btn]');
+  if(addTaskBtn){ addTaskToProject(addTaskBtn.dataset.addTaskBtn); return; }
+  const waitBtn = e.target.closest('[data-task-waiting]');
+  if(waitBtn){ toggleWaiting(waitBtn.dataset.taskWaiting); return; }
+  const bentoCard = e.target.closest('[data-scroll]');
+  if(bentoCard){
+    setActivePriorityTab(bentoCard.dataset.scroll);
+    const target = document.getElementById('priorityList');
+    if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+    return;
+  }
+  const flatBrief = e.target.closest('.flat-row[data-brief]');
+  if(flatBrief){ openBriefModal(flatBrief.dataset.brief); return; }
+  const priorityTabBtn = e.target.closest('.priority-tab');
+  if(priorityTabBtn){ setActivePriorityTab(priorityTabBtn.dataset.tab); return; }
+  const statusBtn = e.target.closest('[data-status]');
+  if(statusBtn && statusBtn.closest('#myStatusPicker')){
+    if(!currentUserId){ openWhoami(); return; }
+    statuses[currentUserId] = statusBtn.dataset.status;
+    saveTasksToStorage();
+    renderBoard();
+    return;
+  }
+});
+function setActivePriorityTab(tab){
+  activePriorityTab = tab;
+  document.querySelectorAll('.priority-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  renderPriorityList();
+}
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && e.target.matches('[data-new-task]')){
+    addTaskToProject(e.target.dataset.newTask);
+  }
+});
+
+/* ---------------------------------------------------------
+   ASSIGNEE DROPDOWN (populate with live workload counts)
+--------------------------------------------------------- */
+function activeBriefCountFor(memberId){
+  return briefs.filter(b => b.assigneeId === memberId && b.status !== 'Approved').length;
+}
+function populateAssigneeSelect(){
+  const sel = document.getElementById('assigneeSelect');
+  sel.innerHTML = '';
+  ['JB','KL'].forEach(office=>{
+    const group = document.createElement('optgroup');
+    group.label = office + ' office';
+    TEAM.filter(m=>m.office===office).forEach(m=>{
+      const opt = document.createElement('option');
+      const count = activeBriefCountFor(m.id);
+      opt.value = m.id;
+      opt.textContent = `${m.name} (${count} active)`;
+      group.appendChild(opt);
+    });
+    sel.appendChild(group);
+  });
+}
+
+/* ---------------------------------------------------------
+   RULE-BASED BRIEF ANALYSIS (no AI, works fully offline)
+--------------------------------------------------------- */
+const EVENT_TEMPLATES = {
+  wedding: {
+    label: 'Wedding / solemnization',
+    concepts: [
+      { name:'Golden Hour Garden', angle:'A softly-lit outdoor-inspired setup for {PAX} at {LOCATION}, leaning into natural textures and warm light rather than a stiff ballroom feel.', suggestions:['String quartet for ceremony','Acoustic duo for reception','Photo booth with floral backdrop','Live watercolour portrait artist'] },
+      { name:'Modern Heritage', angle:'Blends contemporary styling with cultural touches, giving {PAX} something that feels personal rather than a generic hotel wedding.', suggestions:['Traditional dance opener','Live calligraphy station','MC bilingual hosting','Lion dance for entrance'] },
+      { name:'Intimate Luxe', angle:'A tighter, high-touch guest experience at {LOCATION} — fewer generic banquet elements, more personalised moments throughout.', suggestions:['String trio','Interactive cocktail station with mixologist','Candid photographer + same-day edit reel','Guestbook video booth'] },
+    ]
+  },
+  corporate_dinner: {
+    label: 'Corporate / annual dinner',
+    concepts: [
+      { name:'Where It All Began', angle:'Opens the night with the company\'s origin story for {PAX} at {LOCATION} — how it started, the early struggles, the people who built it — before moving into the present.', suggestions:['Founder interview or narrated video segment','Timeline/heritage wall with old photos','Live band scoring the story beats','Emcee-led narrative hosting'] },
+      { name:'The Turning Point', angle:'Builds the night around this year\'s defining moment or achievement for {PAX} — a launch, a milestone, a comeback — giving the evening real emotional stakes instead of a generic run of segments.', suggestions:['Highlight reel video montage','Staff awards segment tied to the milestone','Live band','Photo booth with company branding'] },
+      { name:'The Next Chapter', angle:'Closes the story forward-looking — where the company is headed next — so {PAX} leaves feeling part of what\'s coming, not just what\'s already happened.', suggestions:['Vision/roadmap reveal segment','Leadership address with AV backdrop','DJ set to close the night','Interactive photo booth'] },
+    ]
+  },
+  product_launch: {
+    label: 'Product / brand launch',
+    concepts: [
+      { name:'Reveal Sequence', angle:'Builds a proper unveiling moment for {PAX} at {LOCATION} instead of just placing the product on a table at the start.', suggestions:['Drape-and-reveal staging','Drone light show or projection mapping','Live product demo host','Media wall for press photos'] },
+      { name:'Hands-On Showcase', angle:'Prioritises letting guests interact directly with the product rather than a passive presentation format.', suggestions:['Interactive demo stations','Live social media wall','AI photo booth branded to product','Roving product ambassadors'] },
+      { name:'Press & Influence Night', angle:'Structured around content generation — built so press and guests leave with shareable material, not just a memory.', suggestions:['Step-and-repeat media wall','Livestream setup','Influencer photo corner','Short-form video crew on site'] },
+    ]
+  },
+  conference: {
+    label: 'Conference / seminar',
+    concepts: [
+      { name:'Signature Stage', angle:'Gives the main stage a distinct visual identity for {PAX} at {LOCATION}, rather than a generic conference backdrop.', suggestions:['Custom stage set design','Professional AV + livestream','Panel moderator (hired MC)','Branded photo wall in foyer'] },
+      { name:'Breakout Energy', angle:'Balances the formal main-stage content with more interactive breakout moments so attendees stay engaged across a long day.', suggestions:['Roundtable facilitators','Interactive polling/AV screens','Networking icebreaker host','Coffee-cart branded activation'] },
+      { name:'Content-First Format', angle:'Built to maximise usable takeaway content — recordings, quotes, clips — so the event pays off well beyond the day itself.', suggestions:['Full video recording crew','Live graphic recording artist','Podcast-style side-stage interviews','Photo booth with branded backdrop'] },
+    ]
+  },
+  team_building: {
+    label: 'Team building / retreat',
+    concepts: [
+      { name:'Field Day Reboot', angle:'A structured but light-hearted physical activity day for {PAX}, built around team scoring rather than loose free time.', suggestions:['Games facilitator team','Outdoor obstacle stations','Instant photo booth','Prize/trophy segment'] },
+      { name:'Retreat & Reflect', angle:'Slower-paced format mixing structured team sessions with genuine downtime, suited to teams that are burnt out rather than needing more hype.', suggestions:['Facilitated workshop host','Chill-out lounge zone','Live acoustic music','Group photo/video montage'] },
+      { name:'Challenge Circuit', angle:'Rotating small-group challenge stations at {LOCATION}, keeps energy high without needing one big single activity to carry the whole day.', suggestions:['Multi-station games crew','MC for scoring/announcements','On-site photographer','Snack/beverage cart activation'] },
+    ]
+  },
+  gala: {
+    label: 'Gala / awards / fundraising',
+    concepts: [
+      { name:'Red Carpet Moment', angle:'Gives {PAX} an arrival experience worth dressing up for, not just a seated dinner that starts cold.', suggestions:['Red carpet + step-and-repeat wall','Live string ensemble on arrival','Professional photographer + media wall','Emcee for award segments'] },
+      { name:'Cause & Impact', angle:'Structures the night around the cause itself (for fundraising/charity briefs) so the ask lands with more emotional weight.', suggestions:['Impact video segment','Live auctioneer/host','String quartet during dinner','Donation counter/screen display'] },
+      { name:'Statement Stage', angle:'Treats the awards/gala stage as the visual centrepiece of the night at {LOCATION}, built for strong photo and press moments.', suggestions:['Custom stage backdrop design','Live band for award walk-ons','Professional stage lighting design','Press photo wall'] },
+    ]
+  },
+  birthday: {
+    label: 'Birthday / private celebration',
+    concepts: [
+      { name:'Personal Theme World', angle:'Builds the whole space around the honouree\'s specific interests for {PAX}, rather than a generic party package.', suggestions:['Themed photo booth','Live DJ or band','Custom dessert table styling','Games/emcee host'] },
+      { name:'Golden Hour Garden Party', angle:'Leans into a relaxed outdoor-style setup at {LOCATION}, good for a warmer, less formal celebration feel.', suggestions:['Acoustic live music','Interactive photo booth','Grazing table/dessert bar','Lawn games setup'] },
+      { name:'After-Dark Celebration', angle:'Shifts energy up later in the night for {PAX}, good if the client wants a party rather than just a dinner.', suggestions:['DJ set','Bartender flair show','LED dance floor','Roving photographer'] },
+    ]
+  },
+  cny_dinner: {
+    label: 'CNY / festive trade dinner',
+    concepts: [
+      { name:'Prosperity Toss Spectacle', angle:'Turns the yee sang toss into a full staged moment for {PAX} at {LOCATION}, giving trade guests something to film and remember rather than a routine customary gesture.', suggestions:['Lion dance opener','Live Chinese cultural dance troupe','Yee sang toss with emcee-led countdown','Fusion live band (Chinese + contemporary sets)'] },
+      { name:'Modern Reunion Lounge', angle:'Blends traditional CNY cues with a more contemporary lounge feel, good for trade partners who\'ve already seen the standard red-and-gold banquet format many times over.', suggestions:['Live band with CNY song medley','Roving red packet / lucky draw segment','Photo booth with festive backdrop','Calligraphy or fortune-telling corner'] },
+      { name:'Heritage Meets Modern', angle:'Leans harder into cultural performance content at {LOCATION}, positioning the night as a showcase rather than a standard trade banquet.', suggestions:['Chinese cultural dance performance','Traditional music ensemble','Lion dance / dragon dance segment','Bilingual emcee hosting'] },
+    ]
+  },
+  generic: {
+    label: 'Event',
+    concepts: [
+      { name:'Signature Moment', angle:'Builds one clear standout moment into the program for {PAX} at {LOCATION}, instead of a flat run of standard segments.', suggestions:['Live band or acoustic set','Interactive photo booth','Emcee/host for flow','Custom stage or backdrop styling'] },
+      { name:'Guest-First Flow', angle:'Prioritises what guests actually experience hands-on — food, interaction, photos — over a heavy formal program.', suggestions:['Interactive food/beverage stations','Roving entertainment','Photo booth or media wall','Light background music act'] },
+      { name:'Story-Led Program', angle:'Structures the event around a clear narrative thread relevant to the client\'s occasion, rather than a generic checklist of segments.', suggestions:['MC with scripted narrative flow','Video/AV segment tied to the story','Live music matched to mood shifts','Photo/video crew for content capture'] },
+    ]
+  }
+};
+
+const EVENT_TYPE_KEYWORDS = [
+  { type:'cny_dinner', keywords:['cny','chinese new year','trade dinner','prosperity dinner','reunion dinner','chong qing','chongqing'] },
+  { type:'wedding', keywords:['wedding','solemnization','solemnisation','bridal','matrimony','akad nikah'] },
+  { type:'corporate_dinner', keywords:['annual dinner','year-end dinner','year end dinner','company dinner','corporate dinner','staff dinner','appreciation night','d&d','dinner and dance','gala dinner'] },
+  { type:'product_launch', keywords:['launch','unveiling','brand activation'] },
+  { type:'conference', keywords:['conference','seminar','summit','forum','convention','townhall','town hall'] },
+  { type:'team_building', keywords:['team building','teambuilding','outing','retreat','staycation'] },
+  { type:'gala', keywords:['gala','fundraising','fund-raising','charity','awards night','awards ceremony'] },
+  { type:'birthday', keywords:['birthday','anniversary party','private party','celebration party'] },
+];
+
+function detectEventType(text){
+  const lower = text.toLowerCase();
+  for(const entry of EVENT_TYPE_KEYWORDS){
+    if(entry.keywords.some(k => lower.includes(k))) return entry.type;
+  }
+  return 'generic';
+}
+
+function extractPax(text){
+  const m = text.match(/(\d[\d,]{1,6})\s*(pax|guests?|attendees?|people|participants?|headcount)/i);
+  if(m) return m[1].replace(/,/g,'');
+  return null;
+}
+function extractBudget(text){
+  const m = text.match(/(?:RM|MYR)\s?([\d,]+(?:\.\d+)?)\s?(k)?/i);
+  if(m){
+    let num = parseFloat(m[1].replace(/,/g,''));
+    if(m[2]) num = num * 1000;
+    return num;
+  }
+  return null;
+}
+function extractLocation(text){
+  const knownPlaces = ['Johor Bahru','JB','Kuala Lumpur','KL','Penang','Singapore','Melaka','Ipoh','Genting','Putrajaya','Cyberjaya','Nusajaya','Iskandar Puteri','KLCC','Bukit Bintang','Mid Valley','Bangsar','TRX','Sunway','Petaling Jaya','PJ','Pavilion','Damansara','Mont Kiara','Shah Alam','Subang','Sentul','Desa ParkCity','KLIA','Sepang'];
+  for(const place of knownPlaces){
+    const re = new RegExp('\\b' + place.replace(/[^\w\s]/g,'') + '\\b', 'i');
+    if(re.test(text)) return place;
+  }
+  const areaMatch = text.match(/\b([A-Z][A-Za-z]*(?:\s[A-Z][A-Za-z]*){0,2})\s+area\b/);
+  if(areaMatch) return areaMatch[1];
+  return null;
+}
+function detectUrgency(text){
+  return /(urgent|asap|next week|this week|tight (deadline|timeline)|short notice|rush)/i.test(text);
+}
+function detectHighStakes(text){
+  return /(vip|international|government|minister|multi-?(city|location)|hybrid|virtual\s*\+\s*physical|nationwide)/i.test(text);
+}
+function extractTiming(text){
+  const monthMap = { jan:'January', feb:'February', mar:'March', apr:'April', may:'May', jun:'June', jul:'July', aug:'August', sep:'September', sept:'September', oct:'October', nov:'November', dec:'December' };
+  const monthRegex = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b/gi;
+  let m;
+  while((m = monthRegex.exec(text)) !== null){
+    const key = m[1].toLowerCase();
+    const monthFull = monthMap[key];
+    if(!monthFull) continue;
+    const idx = m.index;
+    const before = text.slice(Math.max(0, idx-6), idx);
+    const after = text.slice(idx + m[0].length, idx + m[0].length + 10);
+    if(key === 'may' && !/\d/.test(before) && !/\d/.test(after)) continue; // avoid matching the modal verb "may"
+    const dayBefore = before.match(/(\d{1,2})\s*(?:st|nd|rd|th)?\s*$/);
+    const dayAfter = after.match(/^[\s,]*(\d{1,2})(?:st|nd|rd|th)?\b/);
+    const yearMatch = after.match(/(\d{4})/) || before.match(/(\d{4})/);
+    const day = dayBefore ? dayBefore[1] : (dayAfter ? dayAfter[1] : null);
+    const parts = [];
+    if(day) parts.push(day);
+    parts.push(monthFull);
+    if(yearMatch) parts.push(yearMatch[1]);
+    return parts.join(' ');
+  }
+  if(/flexible/i.test(text)) return 'Flexible / date still open';
+  if(/\b(tbc|tba|to be confirmed)\b/i.test(text)) return 'To be confirmed';
+  return null;
+}
+function extractTone(text){
+  const toneWords = ['premium','elegant','luxurious','luxury','casual','fun','vibrant','formal','corporate','intimate','grand','festive','minimalist','chic','relaxed','high-energy','high energy','classy','modern','traditional','rustic','playful','sophisticated'];
+  const lower = text.toLowerCase();
+  const found = [...new Set(toneWords.filter(w=>lower.includes(w)))].slice(0,4);
+  if(!found.length) return null;
+  return found.map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(', ');
+}
+function extractClientAsks(text){
+  let clauses = text.split(/(?<=[.!?])\s+|\n+/).map(s=>s.trim()).filter(Boolean);
+  if(clauses.length <= 1){
+    clauses = text.split(/,\s*/).map(s=>s.trim()).filter(Boolean);
+  }
+  const keyRegex = /\b(want|wants|wanted|need|needs|require|requires|must|prefer|prefers|important|avoid|should|hope|hopes|looking for|would like)\b/i;
+  const matches = clauses.filter(s=> keyRegex.test(s) && s.length > 3 && s.length < 140);
+  return [...new Set(matches)].slice(0,5).map(s=> s.charAt(0).toUpperCase() + s.slice(1).replace(/[.,;]+$/,''));
+}
+
+/* ---------------------------------------------------------
+   STRUCTURED / LABELED BRIEF PARSING
+   Real client briefs often arrive with explicit "Label: value"
+   lines (Event Type:, Date:, Venue:, Pax:, Budget:, etc.) mixed
+   with freeform paragraphs. We pull the labeled fields out
+   directly (far more reliable than scanning the whole blob),
+   and treat the remaining paragraphs as the client's specific
+   requests/notes.
+--------------------------------------------------------- */
+const FIELD_LABELS = {
+  'Client': /^\s*(?:client|company)\s*:\s*(.+)$/i,
+  'Contact person': /^\s*name\s*:\s*(.+)$/i,
+  'Event type': /^\s*event\s*type\s*:\s*(.+)$/i,
+  'Date': /^\s*date\s*:\s*(.+)$/i,
+  'Time': /^\s*time\s*:\s*(.+)$/i,
+  'Venue': /^\s*venue\s*:\s*(.+)$/i,
+  'Headcount': /^\s*pax\s*:\s*(.+)$/i,
+  'Age range': /^\s*age\s*range\s*:\s*(.+)$/i,
+  'Theme': /^\s*theme\s*:\s*(.+)$/i,
+  'Budget': /^\s*budget\s*:\s*(.+)$/i,
+};
+
+function extractLabeledFields(text){
+  const lines = text.split('\n');
+  const found = {};
+  const usedIdx = new Set();
+  lines.forEach((line, idx)=>{
+    const trimmed = line.trim();
+    if(!trimmed) return; // keep blank lines in place — they mark paragraph breaks
+    if(/^-{3,}$/.test(trimmed)){ usedIdx.add(idx); return; }
+    if(/^\s*(address)\s*:/i.test(trimmed)){ usedIdx.add(idx); return; }
+    if(/^[📞✉️]/u.test(trimmed)){ usedIdx.add(idx); return; }
+    if(/^\+?\d[\d\-\s]{7,}$/.test(trimmed)){ usedIdx.add(idx); return; }
+    if(/^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(trimmed)){ usedIdx.add(idx); return; }
+    for(const [label, re] of Object.entries(FIELD_LABELS)){
+      const m = line.match(re);
+      if(m){ found[label] = m[1].trim(); usedIdx.add(idx); break; }
+    }
+  });
+  const remainingText = lines.filter((_, idx)=> !usedIdx.has(idx)).join('\n');
+  return { found, remainingText };
+}
+
+function extractRequestParagraphs(remainingText){
+  const paragraphs = remainingText.split(/\n\s*\n/)
+    .map(p => p.replace(/\s*\n\s*/g, ' ').trim())
+    .filter(Boolean);
+  return paragraphs.slice(0, 6).map(p => p.length > 240 ? p.slice(0,237).trim() + '…' : p);
+}
+
+function parseFirstNumber(str){
+  if(!str) return null;
+  const m = str.match(/\d[\d,]*/);
+  return m ? m[0].replace(/,/g,'') : null;
+}
+
+function parseBudgetDisplay(str){
+  if(!str) return null;
+  const found = [...str.matchAll(/([\d,]+(?:\.\d+)?)\s*(k)?/gi)]
+    .map(m=>{ let n = parseFloat(m[1].replace(/,/g,'')); if(m[2]) n *= 1000; return n; })
+    .filter(n=> !isNaN(n) && n > 0);
+  if(!found.length) return null;
+  if(found.length >= 2){
+    const lo = Math.min(...found), hi = Math.max(...found);
+    return `RM${lo.toLocaleString()} – RM${hi.toLocaleString()}`;
+  }
+  return `RM${found[0].toLocaleString()}`;
+}
+
+function analyzeAndGenerate(rawText){
+  const { found, remainingText } = extractLabeledFields(rawText);
+
+  const eventType = detectEventType((found['Event type'] || '') + ' ' + rawText);
+  const template = EVENT_TEMPLATES[eventType];
+
+  const paxNumber = found['Headcount'] ? parseFirstNumber(found['Headcount']) : extractPax(rawText);
+  const paxDisplay = found['Headcount'] || (paxNumber ? paxNumber + ' pax' : null);
+
+  const budgetDisplay = found['Budget'] ? parseBudgetDisplay(found['Budget']) : (extractBudget(rawText) ? 'RM' + extractBudget(rawText).toLocaleString() : null);
+
+  const locationDisplay = found['Venue'] || extractLocation(rawText);
+
+  const explicitDate = found['Date'] || null;
+  const explicitTime = found['Time'] || null;
+  const timingFallback = extractTiming(rawText);
+
+  const toneDisplay = found['Theme'] || extractTone(rawText);
+
+  const urgent = detectUrgency(rawText);
+  const highStakes = detectHighStakes(rawText);
+
+  const clientAsks = extractRequestParagraphs(remainingText);
+
+  const paxText = paxNumber ? `${paxNumber} pax` : 'your guest count';
+  const locationText = locationDisplay || 'the venue';
+
+  const concepts = template.concepts.map(c => ({
+    name: c.name,
+    angle: c.angle.replace(/{PAX}/g, paxText).replace(/{LOCATION}/g, locationText),
+    suggestions: c.suggestions
+  }));
+
+  // --- effort scoring ---
+  let score = 0;
+  const reasons = [];
+  const paxNum = paxNumber ? parseInt(paxNumber, 10) : null;
+  if(paxNum && paxNum > 500){ score += 2; reasons.push(`a sizeable ${paxNum}-pax guest list`); }
+  else if(paxNum && paxNum > 150){ score += 1; }
+  if(!paxNumber){ score += 1; reasons.push('no headcount given yet, so scope is still fuzzy'); }
+  if(!budgetDisplay){ score += 1; }
+  if(urgent){ score += 2; reasons.push('a tight timeline'); }
+  if(highStakes){ score += 2; reasons.push('higher-stakes elements (VIP, international, or multi-location asks)'); }
+  if(clientAsks.length >= 3){ score += 1; reasons.push('a fair number of specific requirements to coordinate (performances, gifting, crew, etc.)'); }
+  if(rawText.trim().length < 50){ score += 1; reasons.push('a very brief, still-thin ask that needs fleshing out'); }
+
+  let effortLevel = 'senang';
+  if(score >= 5) effortLevel = 'sweat';
+  else if(score >= 2) effortLevel = 'boleh';
+
+  let effortReason;
+  if(reasons.length){
+    effortReason = 'This one involves ' + reasons.slice(0,2).join(' and ') + '.';
+  }else{
+    effortReason = 'Straightforward scope with the essentials already clear.';
+  }
+
+  // --- title ---
+  const titleParts = [found['Event type'] || template.label];
+  if(paxNumber) titleParts.push(`${paxNumber} pax`);
+  if(locationDisplay) titleParts.push(`at ${locationDisplay}`);
+  const title = titleParts.join(' — ');
+
+  // --- team-ready points (beautified, in points form) ---
+  const points = [];
+  if(found['Client']) points.push({ label:'Company / Client', value: found['Client'] });
+  else points.push({ label:'Company / Client', value: 'Not specified — confirm with client' });
+  if(found['Contact person']) points.push({ label:'Contact person', value: found['Contact person'] });
+  points.push({ label:'Event type', value: found['Event type'] || template.label });
+  points.push({ label:'Headcount', value: paxDisplay || 'Not specified — confirm with client' });
+  points.push({ label:'Budget', value: budgetDisplay || 'Not specified — confirm with client' });
+  points.push({ label:'Venue / Location', value: locationDisplay || 'Not specified — confirm with client' });
+  if(explicitDate || explicitTime){
+    points.push({ label:'Date', value: explicitDate || 'Not specified' });
+    points.push({ label:'Time', value: explicitTime || 'Not specified' });
+  }else{
+    points.push({ label:'Timing', value: timingFallback || 'Not specified — confirm with client' });
+  }
+  if(found['Age range']) points.push({ label:'Age range', value: found['Age range'] });
+  points.push({ label:'Theme / style cues', value: toneDisplay || 'Not explicitly mentioned' });
+  points.push({ label:'Flags', value: [urgent ? 'Tight timeline' : null, highStakes ? 'High-stakes / VIP elements' : null].filter(Boolean).join(', ') || 'None noted' });
+
+  return { title, points, clientAsks, concepts, effortLevel, effortReason };
+}
+
+/* ---------------------------------------------------------
+   NEW BRIEF FLOW
+--------------------------------------------------------- */
+/* ---------------------------------------------------------
+   AI-POWERED BRIEF ANALYSIS
+   Real understanding (translation, company-name detection, and
+   industry-aware theme suggestions) needs more than regex, so this
+   calls Claude directly. If it's ever unavailable (e.g. this file
+   is opened outside Claude, or the request fails), we fall back to
+   the offline rule-based analyzeAndGenerate() below automatically.
+--------------------------------------------------------- */
+async function analyzeWithAI(rawText){
+  const prompt = `You are helping an event management company (EGEN) turn a messy client brief into a clean, team-ready summary. The brief may be written in English, Bahasa Malaysia, Bahasa Indonesia, or a mix of these.
+
+Read the raw client brief below and respond with ONLY a raw JSON object — no markdown code fences, no commentary before or after — matching exactly this shape:
+
+{
+  "companyClient": string,      // client's company name, cleaned up (drop legal suffixes like "Sdn Bhd", "Pte Ltd", "Inc" if present). Empty string if genuinely not mentioned.
+  "eventTypeLabel": string,     // human-readable event type, e.g. "Annual Dinner", "Wedding", "Product Launch", "CNY Trade Dinner"
+  "title": string,              // "{Company Name} {Event Type}", e.g. "Wawasan Agrolipids Annual Dinner". If no company name is given, fall back to "{Event Type} — {headcount} pax".
+  "headcount": string,          // e.g. "200 pax", or "" if not specified
+  "budget": string,             // e.g. "RM80,000", or "" if not specified
+  "venue": string,              // or ""
+  "date": string,               // or ""
+  "time": string,               // or ""
+  "theme": string,              // style/theme cues the client mentioned, or ""
+  "flags": [string],            // short flags like "Tight timeline", "High-stakes / VIP elements" — empty array if none apply
+  "specialRequirements": [string], // the client's specific asks/requirements, translated fully into clear, natural English, broken into short bullet points (not full sentences copied verbatim). Skip greetings/pleasantries — only actual requirements.
+  "storyThemes": [               // exactly 3 story-driven event concepts
+    {
+      "name": string,           // short, punchy theme name
+      "angle": string,          // 1-2 sentences describing the theme, tailored to this client's industry/business segment if you can infer it from their company name or context
+      "suggestions": [string]   // 3-4 concrete performance/production elements fitting this theme
+    }
+  ],
+  "effortLevel": "senang" | "boleh" | "sweat",  // senang = easy/quick, boleh = medium, sweat = hard — based on scale, complexity, and timeline pressure
+  "effortReason": string        // one sentence explaining the effort level
+}
+
+RAW CLIENT BRIEF:
+"""
+${rawText}
+"""`;
+
+  const response = await fetch(`${API_BASE}/api/generate-brief`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if(!response.ok){
+    const errBody = await response.json().catch(()=>({}));
+    throw new Error(errBody.error || ('Worker request failed with status ' + response.status));
+  }
+  const data = await response.json();
+  const text = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(cleaned);
+}
+
+function buildResultFromAI(parsed, rawText){
+  const points = [];
+  points.push({ label:'Company / Client', value: parsed.companyClient || 'Not specified — confirm with client' });
+  points.push({ label:'Event type', value: parsed.eventTypeLabel || 'Event' });
+  points.push({ label:'Headcount', value: parsed.headcount || 'Not specified — confirm with client' });
+  points.push({ label:'Budget', value: parsed.budget || 'Not specified — confirm with client' });
+  points.push({ label:'Venue / Location', value: parsed.venue || 'Not specified — confirm with client' });
+  if(parsed.date || parsed.time){
+    points.push({ label:'Date', value: parsed.date || 'Not specified' });
+    points.push({ label:'Time', value: parsed.time || 'Not specified' });
+  }else{
+    points.push({ label:'Timing', value: 'Not specified — confirm with client' });
+  }
+  points.push({ label:'Theme / style cues', value: parsed.theme || 'Not explicitly mentioned' });
+  points.push({ label:'Flags', value: (parsed.flags && parsed.flags.length) ? parsed.flags.join(', ') : 'None noted' });
+
+  return {
+    title: parsed.title || parsed.eventTypeLabel || 'Untitled brief',
+    points,
+    clientAsks: parsed.specialRequirements || [],
+    concepts: (parsed.storyThemes || []).map(s => ({ name:s.name, angle:s.angle, suggestions:s.suggestions || [] })),
+    effortLevel: parsed.effortLevel || 'boleh',
+    effortReason: parsed.effortReason || '',
+    rawBrief: rawText,
+  };
+}
+
+document.getElementById('generateBtn').addEventListener('click', async ()=>{
+  const raw = document.getElementById('rawBrief').value.trim();
+  const errorBox = document.getElementById('errorBox');
+  const loadingLine = document.getElementById('loadingLine');
+  const genBtn = document.getElementById('generateBtn');
+  errorBox.style.display = 'none';
+
+  if(!raw){
+    errorBox.textContent = "Paste in the client's brief first — even a rough, unpolished version is fine.";
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  genBtn.disabled = true;
+  loadingLine.style.display = 'flex';
+  document.getElementById('resultBlock').style.display = 'none';
+
+  try{
+    const parsed = await analyzeWithAI(raw);
+    pendingResult = buildResultFromAI(parsed, raw);
+    renderResult(pendingResult);
+    populateAssigneeSelect();
+    document.getElementById('resultBlock').style.display = 'block';
+    document.getElementById('assignConfirm').style.display = 'none';
+  }catch(err){
+    console.error('AI generation failed, falling back to offline parser:', err);
+    try{
+      const fallback = analyzeAndGenerate(raw);
+      pendingResult = { ...fallback, rawBrief: raw };
+      renderResult(pendingResult);
+      populateAssigneeSelect();
+      document.getElementById('resultBlock').style.display = 'block';
+      document.getElementById('assignConfirm').style.display = 'none';
+      errorBox.textContent = "Note: smart generation was unavailable, so this used the basic offline parser instead — translation and theme suggestions may be more limited.";
+      errorBox.style.display = 'block';
+    }catch(err2){
+      console.error(err2);
+      errorBox.textContent = "Something went wrong reading this brief — try rephrasing it slightly and generate again.";
+      errorBox.style.display = 'block';
+    }
+  }finally{
+    genBtn.disabled = false;
+    loadingLine.style.display = 'none';
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  document.getElementById('rawBrief').value = '';
+  document.getElementById('resultBlock').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  pendingResult = null;
+});
+
+function renderResult(result){
+  const meta = EFFORT_META[result.effortLevel] || EFFORT_META.boleh;
+  document.getElementById('effortBadgeWrap').innerHTML = `
+    <span class="effort-badge ${meta.cls}">${meta.emoji} ${meta.label}</span>
+    <div style="margin-top:8px; font-size:13px; color:var(--muted);">${escapeHtml(result.effortReason || '')}</div>
+  `;
+  document.getElementById('briefTitleOut').textContent = result.title || 'Untitled brief';
+  document.getElementById('teamReadyOut').innerHTML = buildTeamReadyHtml(result);
+
+  const grid = document.getElementById('conceptsOut');
+  grid.innerHTML = '';
+  (result.concepts || []).forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'concept-card';
+    const chips = (c.suggestions || []).map(s=>`<span class="chip">${escapeHtml(s)}</span>`).join('');
+    div.innerHTML = `
+      <h4>${escapeHtml(c.name||'')}</h4>
+      <p>${escapeHtml(c.angle||'')}</p>
+      ${chips ? `<div class="suggestions-label">Suggested content &amp; performances</div><div class="chip-row">${chips}</div>` : ''}
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function buildTeamReadyHtml(result){
+  // Structured point-form summary (client, event type, headcount, budget,
+  // venue, timing, theme, flags) plus a separate "Special requirements"
+  // list pulled from the client's message — cleaned into bullets, not a
+  // raw quote — so the team knows about specific asks without anyone
+  // having to re-read the original message.
+  const pointsHtml = (result.points||[]).map(p=>
+    `<li><span class="point-label">${escapeHtml(p.label)}</span><span>${escapeHtml(p.value)}</span></li>`
+  ).join('');
+  const specialReqHtml = (result.clientAsks && result.clientAsks.length)
+    ? `<div class="eyebrow" style="margin-top:16px;">Special requirements for the team</div>
+       <ul class="asks-list">${result.clientAsks.map(a=>`<li>${escapeHtml(a)}</li>`).join('')}</ul>`
+    : '';
+  return `<ul class="point-list">${pointsHtml}</ul>${specialReqHtml}`;
+}
+
+function buildWhatsAppLink(member, brief){
+  const meta = EFFORT_META[brief.effortLevel] || EFFORT_META.boleh;
+  const msg = `*New brief assigned* — for ${member.name}\n\n*${brief.title}*\nDue: ${formatDate(brief.dueDate)}\nEffort: ${meta.emoji} ${meta.label}\n\nCheck EGEN Master Deck for the full team-ready brief and concept angles.`;
+  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
+
+document.getElementById('assignBtn').addEventListener('click', ()=>{
+  if(!pendingResult){ return; }
+  const assigneeId = document.getElementById('assigneeSelect').value;
+  const dueDate = document.getElementById('dueDateInput').value;
+  const confirmEl = document.getElementById('assignConfirm');
+
+  if(!assigneeId){
+    confirmEl.style.display = 'block';
+    confirmEl.style.color = '#B4321A';
+    confirmEl.textContent = 'Pick a team member first.';
+    return;
+  }
+  if(!dueDate){
+    confirmEl.style.display = 'block';
+    confirmEl.style.color = '#B4321A';
+    confirmEl.textContent = 'Set a due date first.';
+    return;
+  }
+
+  const member = TEAM.find(m=>m.id===assigneeId);
+  const brief = {
+    id: 'b' + (briefCounter++),
+    title: pendingResult.title,
+    rawBrief: pendingResult.rawBrief,
+    points: pendingResult.points,
+    clientAsks: pendingResult.clientAsks,
+    concepts: pendingResult.concepts,
+    effortLevel: pendingResult.effortLevel,
+    effortReason: pendingResult.effortReason,
+    assigneeId,
+    dueDate,
+    status: 'Assigned',
+    createdAt: new Date().toISOString().slice(0,10),
+    approvedAt: null,
+  };
+  briefs.push(brief);
+  saveBriefsToStorage();
+
+  const waLink = buildWhatsAppLink(member, brief);
+  confirmEl.style.display = 'block';
+  confirmEl.style.color = 'var(--teal-deep)';
+  confirmEl.innerHTML = `Assigned to ${member.name}, due ${formatDate(dueDate)}. <br><a class="wa-btn" style="margin-top:10px;" href="${waLink}" target="_blank" rel="noopener">Share to Job Brief group</a>`;
+
+  // reset for next brief
+  pendingResult = null;
+  document.getElementById('rawBrief').value = '';
+  setTimeout(()=>{
+    document.getElementById('resultBlock').style.display = 'none';
+  }, 1400);
+});
+
+/* ---------------------------------------------------------
+   DAILY TASK / PROJECT TRACKING — helpers
+--------------------------------------------------------- */
+function todayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+function projectStats(project){
+  const total = project.tasks.length;
+  const done = project.tasks.filter(t=>t.done).length;
+  const fullyComplete = total > 0 && done === total;
+  const tasksOverdue = project.tasks.some(t=> !t.done && t.dueDate && t.dueDate < todayStr());
+  const projectOverdue = !fullyComplete && project.dueDate && project.dueDate < todayStr();
+  return { total, done, overdue: tasksOverdue || projectOverdue };
+}
+function allMineDone(){
+  const mine = projects.filter(p=>p.ownerId===currentUserId);
+  const tasks = mine.flatMap(p=>p.tasks);
+  if(!tasks.length) return false;
+  return tasks.every(t=>t.done);
+}
+function toggleTask(taskId){
+  const wasAllDone = allMineDone();
+  for(const p of projects){
+    const t = p.tasks.find(x=>x.id===taskId);
+    if(t){ t.done = !t.done; break; }
+  }
+  saveTasksToStorage();
+  renderBoard();
+  if(!wasAllDone && allMineDone()) celebrate();
+}
+function deleteTask(taskId){
+  for(const p of projects){
+    const idx = p.tasks.findIndex(x=>x.id===taskId);
+    if(idx > -1){ p.tasks.splice(idx,1); break; }
+  }
+  saveTasksToStorage();
+  renderBoard();
+}
+function deleteProject(projectId){
+  const idx = projects.findIndex(p=>p.id===projectId);
+  if(idx > -1) projects.splice(idx,1);
+  saveTasksToStorage();
+  renderBoard();
+}
+function addTaskToProject(projectId){
+  const input = document.querySelector(`[data-new-task="${projectId}"]`);
+  const dateInput = document.querySelector(`[data-new-task-due="${projectId}"]`);
+  if(!input) return;
+  const text = input.value.trim();
+  if(!text) return;
+  const project = projects.find(p=>p.id===projectId);
+  if(!project) return;
+  project.tasks.push({ id:'t'+(taskCounter++), text, done:false, waiting:false, dueDate: dateInput ? dateInput.value : '' });
+  saveTasksToStorage();
+  renderBoard();
+}
+function toggleWaiting(taskId){
+  for(const p of projects){
+    const t = p.tasks.find(x=>x.id===taskId);
+    if(t){ t.waiting = !t.waiting; break; }
+  }
+  saveTasksToStorage();
+  renderBoard();
+}
+function buildProjectCardHtml(project, editable){
+  const { total, done, overdue } = projectStats(project);
+  const pct = total ? Math.round((done/total)*100) : 0;
+  const tasksHtml = project.tasks.map(t=>{
+    const isOverdue = !t.done && t.dueDate && t.dueDate < todayStr();
+    return `<li class="${t.done?'done':''}">
+      ${editable ? `<input type="checkbox" ${t.done?'checked':''} data-task-toggle="${t.id}">` : `<span class="status-dot ${t.done?'status-free':'status-busy'}"></span>`}
+      <span class="task-text">${escapeHtml(t.text)}</span>
+      ${t.waiting ? '<span class="waiting-tag">Waiting</span>' : ''}
+      ${t.dueDate ? `<span class="task-due ${isOverdue?'overdue':''}">${isOverdue?'Overdue · ':''}${formatDate(t.dueDate)}</span>` : ''}
+      ${editable ? `<button class="task-waiting-btn ${t.waiting?'active':''}" data-task-waiting="${t.id}" title="Waiting on client / supplier">⏳</button>` : ''}
+      ${editable ? `<button class="task-del" data-task-del="${t.id}" title="Remove task">&times;</button>` : ''}
+    </li>`;
+  }).join('');
+  return `<div class="project-card">
+    <div class="project-head">
+      <h4>${escapeHtml(project.title)}</h4>
+      <div class="project-meta-row">
+        ${overdue ? '<span class="overdue-tag">Overdue</span>' : ''}
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <span class="progress-frac">${done}/${total} tasks</span>
+        ${editable ? `<button class="project-del-btn" data-project-del="${project.id}">Delete</button>` : ''}
+      </div>
+    </div>
+    ${project.dueDate ? `<div style="font-size:12px; color:var(--muted); margin-top:2px;">Due ${formatDate(project.dueDate)}</div>` : ''}
+    <ul class="task-list">${tasksHtml || '<li style="color:var(--muted); border-top:none;">No tasks yet</li>'}</ul>
+    ${editable ? `
+    <div class="add-task-row">
+      <input type="text" placeholder="Add a task..." data-new-task="${project.id}">
+      <input type="date" data-new-task-due="${project.id}" title="Optional due date">
+      <button class="btn btn-ghost" data-add-task-btn="${project.id}" type="button" style="padding:8px 14px;">Add</button>
+    </div>` : ''}
+  </div>`;
+}
+function renderGreeting(){
+  const el = document.getElementById('greetingOut');
+  if(!el) return;
+  if(!currentUserId){ el.textContent = 'Hey there'; return; }
+  const member = TEAM.find(m=>m.id===currentUserId);
+  const hour = new Date().getHours();
+  const part = hour < 12 ? 'morning' : (hour < 18 ? 'afternoon' : 'evening');
+  el.textContent = `Good ${part}, ${member ? member.name : 'there'} 👋`;
+}
+function renderCurrentUserLabel(){
+  // Always visible in the header (not just the Board tab) so it's unmistakable
+  // who's "active" on this device/account — important since the who-am-I
+  // picker is tied to the Claude account viewing this file, not the physical
+  // device, so a shared login needs this to be obvious at a glance.
+  const el = document.getElementById('currentUserLabel');
+  if(!el) return;
+  const member = TEAM.find(m=>m.id===currentUserId);
+  el.textContent = member ? `👤 ${member.name}` : '👤 Not signed in';
+}
+function renderMyStatusPicker(){
+  const wrap = document.getElementById('myStatusPicker');
+  if(!wrap) return;
+  if(!currentUserId){ wrap.innerHTML = ''; return; }
+  const current = statuses[currentUserId] || 'free';
+  wrap.innerHTML = Object.keys(STATUS_META).map(key=>{
+    const meta = STATUS_META[key];
+    return `<button class="status-pill ${meta.cls} ${key===current?'selected':''}" data-status="${key}">${meta.emoji} ${meta.label}</button>`;
+  }).join('');
+}
+function getAllItemsFlat(){
+  const taskItems = projects.flatMap(p => p.tasks.map(t => ({ ...t, type:'task', projectTitle:p.title, ownerId:p.ownerId })));
+  const projectDeadlineItems = projects
+    .filter(p => p.dueDate) // only projects that set their own deadline
+    .map(p => {
+      const stats = projectStats(p);
+      const fullyComplete = stats.total > 0 && stats.done === stats.total;
+      return {
+        id: 'pd-' + p.id,
+        type: 'project',
+        text: p.title + ' — project deadline',
+        projectTitle: `${stats.done}/${stats.total} tasks`,
+        ownerId: p.ownerId,
+        dueDate: p.dueDate,
+        waiting: false,
+        done: fullyComplete, // once every task is done, the project drops off the active dashboard
+      };
+    });
+  const proposalItems = briefs.map(b => ({
+    id: b.id,
+    type: 'proposal',
+    text: b.title,
+    projectTitle: 'Proposal / Quotation',
+    ownerId: b.assigneeId,
+    dueDate: b.dueDate,
+    status: b.status,
+    waiting: b.status === 'Submitted',
+    done: b.status === 'Approved',
+  }));
+  return [...taskItems, ...projectDeadlineItems, ...proposalItems];
+}
+function getTodayItems(allItems){
+  const items = allItems || getAllItemsFlat();
+  const today = todayStr();
+  return items.filter(t=>!t.done && t.dueDate === today);
+}
+function getOverdueItems(allItems){
+  const items = allItems || getAllItemsFlat();
+  const today = todayStr();
+  return items.filter(t=>!t.done && t.dueDate && t.dueDate < today)
+    .sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+}
+function getWaitingItems(allItems){
+  const items = allItems || getAllItemsFlat();
+  return items.filter(t=>!t.done && t.waiting)
+    .sort((a,b)=> (a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
+}
+function getUpcomingItems(allItems){
+  const items = allItems || getAllItemsFlat();
+  const today = todayStr();
+  const in7 = new Date(); in7.setDate(in7.getDate()+7);
+  const in7Str = in7.toISOString().slice(0,10);
+  return items.filter(t=>!t.done && t.dueDate && t.dueDate > today && t.dueDate <= in7Str)
+    .sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+}
+function relativeDateLabel(dateStr){
+  if(!dateStr) return 'No due date';
+  const today = todayStr();
+  const d = new Date(dateStr+'T00:00:00');
+  const t = new Date(today+'T00:00:00');
+  const diffDays = Math.round((d - t) / 86400000);
+  if(diffDays === 0) return 'Today';
+  if(diffDays === 1) return 'Tomorrow';
+  if(diffDays === -1) return 'Yesterday';
+  if(diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+  if(diffDays <= 7) return `In ${diffDays}d`;
+  return formatDate(dateStr);
+}
+function buildFlatRowHtml(item, tab){
+  const owner = TEAM.find(m=>m.id===item.ownerId);
+  const isProposal = item.type === 'proposal';
+  const isProjectDeadline = item.type === 'project';
+  const editable = item.type === 'task' && item.ownerId === currentUserId;
+  const rowIcon = isProposal ? '📄' : (isProjectDeadline ? '🗂' : '•');
+
+  const metaText = [item.projectTitle, owner ? owner.name : null].filter(Boolean).map(escapeHtml).join(' · ');
+  const tagsHtml = (isProposal ? '<span class="proposal-tag">Proposal</span>' : '')
+    + ((item.waiting && tab !== 'waiting') ? '<span class="waiting-tag">Waiting</span>' : '');
+
+  let sideText;
+  if(tab === 'overdue') sideText = relativeDateLabel(item.dueDate);
+  else if(tab === 'today') sideText = 'Due today';
+  else if(tab === 'upcoming') sideText = relativeDateLabel(item.dueDate);
+  else if(tab === 'waiting') sideText = item.dueDate ? formatDate(item.dueDate) : 'No due date';
+  else sideText = item.dueDate ? formatDate(item.dueDate) : '';
+
+  const statusSelectHtml = isProposal
+    ? `<select class="mini-status-select" data-brief-status="${item.id}">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===item.status?'selected':''}>${s}</option>`).join('')}</select>`
+    : '';
+  const waitingToggleHtml = editable
+    ? `<button class="task-waiting-btn ${item.waiting?'active':''}" data-task-waiting="${item.id}" title="Waiting on client / supplier">⏳</button>`
+    : '';
+
+  return `<div class="flat-row ${isProposal?'clickable':''}" ${isProposal ? `data-brief="${item.id}"` : ''}>
+    <div class="flat-row-main">
+      ${editable ? `<input type="checkbox" data-task-toggle="${item.id}">` : `<span class="flat-row-icon">${rowIcon}</span>`}
+      <div class="flat-row-text">
+        <div class="flat-row-title">${escapeHtml(item.text)}</div>
+        <div class="flat-row-meta"><span>${metaText}</span>${tagsHtml}</div>
+      </div>
+    </div>
+    <div class="flat-row-side">
+      <span class="flat-when">${sideText}</span>
+      ${statusSelectHtml}
+      ${waitingToggleHtml}
+    </div>
+  </div>`;
+}
+function renderBentoSummary(allItems){
+  const wrap = document.getElementById('bentoSummaryRow');
+  if(!wrap) return;
+  const items = allItems || getAllItemsFlat();
+  const today = getTodayItems(items), overdue = getOverdueItems(items), waiting = getWaitingItems(items), upcoming = getUpcomingItems(items);
+  wrap.innerHTML = `
+    <div class="bento-card bento-today" data-scroll="today">
+      <span class="bento-icon">📋</span>
+      <div class="bento-label">Today</div>
+      <div class="bento-number">${today.length}</div>
+      <div class="bento-sub">${today.length ? 'tasks & proposals due' : 'nothing due today'}</div>
+    </div>
+    <div class="bento-card bento-overdue" data-scroll="overdue">
+      <span class="bento-icon">⏰</span>
+      <div class="bento-label">Overdue</div>
+      <div class="bento-number">${overdue.length}</div>
+      <div class="bento-sub">${overdue.length ? 'needs a nudge' : 'all clear'}</div>
+    </div>
+    <div class="bento-card bento-waiting" data-scroll="waiting">
+      <span class="bento-icon">⏳</span>
+      <div class="bento-label">Waiting on Client/Supplier</div>
+      <div class="bento-number">${waiting.length}</div>
+      <div class="bento-sub">${waiting.length ? 'follow-up needed' : 'nothing pending'}</div>
+    </div>
+    <div class="bento-card bento-upcoming" data-scroll="upcoming">
+      <span class="bento-icon">📅</span>
+      <div class="bento-label">Upcoming (7 days)</div>
+      <div class="bento-number">${upcoming.length}</div>
+      <div class="bento-sub">${upcoming.length ? 'coming up' : 'nothing on the horizon'}</div>
+    </div>
+  `;
+}
+let activePriorityTab = 'today';
+
+const PRIORITY_EMPTY_STATES = {
+  today:    ['Nothing due today', 'Nothing on the board — tasks or proposals — is due today.'],
+  overdue:  ['Nothing overdue', "Everything's on track right now."],
+  waiting:  ['Nothing pending', 'Flag a task with ⏳, or a proposal lands here once it\'s Submitted and awaiting the client.'],
+  upcoming: ['Nothing on the horizon', 'No deadlines in the next 7 days.'],
+};
+
+function renderPriorityList(allItems){
+  const wrap = document.getElementById('priorityList');
+  if(!wrap) return;
+  const items = allItems || getAllItemsFlat();
+  const dataMap = {
+    today: getTodayItems(items),
+    overdue: getOverdueItems(items),
+    waiting: getWaitingItems(items),
+    upcoming: getUpcomingItems(items),
+  };
+  const rows = dataMap[activePriorityTab] || [];
+  const [emptyTitle, emptyBody] = PRIORITY_EMPTY_STATES[activePriorityTab] || PRIORITY_EMPTY_STATES.today;
+  wrap.innerHTML = rows.length
+    ? rows.map(it=>buildFlatRowHtml(it, activePriorityTab)).join('')
+    : `<div class="empty-state"><h3>${emptyTitle}</h3><p>${emptyBody}</p></div>`;
+
+  ['today','overdue','waiting','upcoming'].forEach(key=>{
+    const countEl = document.getElementById('count' + key.charAt(0).toUpperCase() + key.slice(1));
+    if(countEl) countEl.textContent = dataMap[key].length;
+  });
+}
+
+function renderProjectProgressSection(){
+  const projectsWrap = document.getElementById('sectionProjects');
+  if(!projectsWrap) return;
+  if(!projects.length){
+    projectsWrap.innerHTML = `<div class="empty-state"><h3>No projects yet</h3><p>Add one using the quick-add card above — you can break it into tasks right after.</p></div>`;
+    return;
+  }
+  const sorted = projects.slice().sort((a,b)=>{
+    const sa = projectStats(a), sb = projectStats(b);
+    if(sa.overdue !== sb.overdue) return sa.overdue ? -1 : 1;
+    return 0;
+  });
+  projectsWrap.innerHTML = sorted.map(p=>{
+    const owner = TEAM.find(m=>m.id===p.ownerId);
+    const editable = p.ownerId === currentUserId;
+    const ownerLabel = `<div style="font-size:11.5px; color:var(--muted); margin-bottom:4px;">${owner ? owner.name : ''}${editable ? ' <span style="font-weight:600;">(you)</span>' : ''}</div>`;
+    return ownerLabel + buildProjectCardHtml(p, editable);
+  }).join('');
+}
+
+/* ---------------------------------------------------------
+   CELEBRATION ANIMATION
+--------------------------------------------------------- */
+function showToast(message){
+  const toast = document.getElementById('celebrateToast');
+  if(!toast) return;
+  toast.textContent = message;
+  clearTimeout(showToast._timer);
+  toast.classList.add('show');
+  showToast._timer = setTimeout(()=>{ toast.classList.remove('show'); }, 2800);
+}
+function celebrate(){
+  const overlay = document.getElementById('confettiOverlay');
+  if(!overlay) return;
+  overlay.innerHTML = '';
+  overlay.classList.add('active');
+  const colors = ['#DDF3DF','#DDEBFA','#E7DDF8','#F5E8BD','#D9EFE8','#3E8F76'];
+  for(let i=0;i<60;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = (Math.random()*100) + 'vw';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.animationDuration = (2.2 + Math.random()*1.4) + 's';
+    piece.style.animationDelay = (Math.random()*0.4) + 's';
+    overlay.appendChild(piece);
+  }
+  showToast("🎉 Today's tasks cleared — nice work!");
+  setTimeout(()=>{ overlay.classList.remove('active'); overlay.innerHTML = ''; }, 3600);
+}
+/* ---------------------------------------------------------
+   WHO-AM-I PICKER
+--------------------------------------------------------- */
+function populateWhoamiGrid(){
+  const grid = document.getElementById('whoamiGrid');
+  grid.innerHTML = '';
+  ['JB','KL'].forEach(office=>{
+    const label = document.createElement('div');
+    label.className = 'whoami-office-label';
+    label.textContent = office === 'JB' ? 'Johor Bahru' : 'Kuala Lumpur';
+    grid.appendChild(label);
+    TEAM.filter(m=>m.office===office).forEach(m=>{
+      const initials = m.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+      const btn = document.createElement('button');
+      btn.className = 'whoami-btn';
+      btn.innerHTML = `<span class="avatar">${initials}</span>${m.name}`;
+      btn.addEventListener('click', ()=>{
+        currentUserId = m.id;
+        saveCurrentUser();
+        renderCurrentUserLabel();
+        closeWhoami();
+        renderBoard();
+      });
+      grid.appendChild(btn);
+    });
+  });
+}
+function openWhoami(){
+  populateWhoamiGrid();
+  document.getElementById('whoamiOverlay').classList.add('open');
+}
+function closeWhoami(){
+  document.getElementById('whoamiOverlay').classList.remove('open');
+}
+
+/* ---------------------------------------------------------
+   BOARD (My Day + Team) — combined view
+--------------------------------------------------------- */
+function renderBoard(){
+  renderCurrentUserLabel();
+  renderGreeting();
+  renderMyStatusPicker();
+  const allItems = getAllItemsFlat(); // computed once per render, shared below (was recomputed up to 8x)
+  renderBentoSummary(allItems);
+  renderPriorityList(allItems);
+  renderProjectProgressSection();
+
+  const grid = document.getElementById('teamGrid');
+  grid.innerHTML = '';
+
+  ['JB','KL'].forEach(office=>{
+    const heading = document.createElement('div');
+    heading.className = 'region-heading';
+    heading.innerHTML = `<span class="region-dot"></span>${office === 'JB' ? 'Johor Bahru' : 'Kuala Lumpur'}`;
+    grid.appendChild(heading);
+
+    const row = document.createElement('div');
+    row.className = 'member-grid';
+    TEAM.filter(m=>m.office===office).forEach(m=>{
+      const memberBriefs = briefs.filter(b=>b.assigneeId===m.id && b.status !== 'Approved');
+      const memberProjects = projects.filter(p=>p.ownerId===m.id);
+      const statusKey = statuses[m.id] || 'free';
+      const statusMeta = STATUS_META[statusKey];
+      const initials = m.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+      const card = document.createElement('div');
+      card.className = 'member-card';
+      card.innerHTML = `
+        <div class="member-head">
+          <div class="avatar">${initials}</div>
+          <div style="flex:1;">
+            <div class="member-name">${m.name}${m.id===currentUserId ? ' <span style="color:var(--muted); font-weight:500;">(you)</span>' : ''}</div>
+            <div class="member-load">${memberBriefs.length} brief${memberBriefs.length===1?'':'s'} &middot; ${memberProjects.length} project${memberProjects.length===1?'':'s'}</div>
+          </div>
+          <span class="status-pill ${statusMeta.cls}" style="cursor:default;">${statusMeta.emoji} ${statusMeta.label}</span>
+        </div>
+        <ul class="other-project-list">
+          ${memberProjects.length ? memberProjects.map(p=>{
+            const st = projectStats(p);
+            return `<li><span>${escapeHtml(p.title)}</span><span>${st.overdue ? '<span class="overdue-tag">Overdue</span> ' : ''}${st.done}/${st.total}</span></li>`;
+          }).join('') : '<li style="color:var(--muted); border-top:none;">No active projects</li>'}
+        </ul>
+        <ul class="member-briefs">
+          ${memberBriefs.length ? memberBriefs.map(b=>`<li class="clickable" data-brief="${b.id}"><span>${escapeHtml(b.title)}</span><span class="due-tag">${formatDate(b.dueDate)}</span></li>`).join('') : '<li style="color:var(--muted); border-top:none;">Nothing on their plate right now</li>'}
+        </ul>
+      `;
+      row.appendChild(card);
+    });
+    grid.appendChild(row);
+  });
+
+  grid.querySelectorAll('.member-briefs li.clickable').forEach(li=>{
+    li.addEventListener('click', ()=> openBriefModal(li.dataset.brief));
+  });
+
+  renderActiveBriefList();
+}
+
+function renderActiveBriefList(){
+  const wrap = document.getElementById('activeBriefList');
+  const active = briefs.filter(b=>b.status !== 'Approved');
+  if(!active.length){
+    wrap.innerHTML = `<div class="empty-state"><h3>Nothing in progress</h3><p>Assign a brief from the New Brief tab to see it here.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = '';
+  active.forEach(b=>{
+    const member = TEAM.find(m=>m.id===b.assigneeId);
+    const meta = EFFORT_META[b.effortLevel] || EFFORT_META.boleh;
+    const row = document.createElement('div');
+    row.className = 'brief-row clickable';
+    const waLink = member ? buildWhatsAppLink(member, b) : '#';
+    row.innerHTML = `
+      <div class="info">
+        <h4>${escapeHtml(b.title)}</h4>
+        <div class="meta">${member ? member.name : 'Unassigned'} &middot; due ${formatDate(b.dueDate)} &middot; <span class="effort-badge ${meta.cls}" style="padding:3px 10px; font-size:11px;">${meta.emoji} ${meta.label}</span></div>
+      </div>
+      <a class="wa-btn wa-btn-sm" href="${waLink}" target="_blank" rel="noopener" title="Share to Job Brief group">Share</a>
+      <select class="status-select" data-id="${b.id}"></select>
+    `;
+    row.querySelector('.info').addEventListener('click', ()=> openBriefModal(b.id));
+    row.querySelector('.wa-btn').addEventListener('click', (e)=> e.stopPropagation());
+    const sel = row.querySelector('select');
+    STATUS_OPTIONS.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      if(s === b.status) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', (e)=>{
+      updateBriefStatus(b.id, e.target.value);
+    });
+    wrap.appendChild(row);
+  });
+}
+
+function updateBriefStatus(id, newStatus){
+  const brief = briefs.find(b=>b.id===id);
+  if(!brief) return;
+  brief.status = newStatus;
+  if(newStatus === 'Approved'){
+    brief.approvedAt = new Date().toISOString().slice(0,10);
+  }
+  saveBriefsToStorage();
+  renderBoard();
+  if(newStatus === 'Approved'){
+    showToast(`✅ "${brief.title}" approved — moved to Archive`);
+  }
+}
+
+/* ---------------------------------------------------------
+   ARCHIVE
+--------------------------------------------------------- */
+function renderArchive(){
+  const wrap = document.getElementById('archiveWrap');
+  const approved = briefs.filter(b=>b.status==='Approved');
+  if(!approved.length){
+    wrap.innerHTML = `<div class="empty-state"><h3>Archive's empty for now</h3><p>Briefs land here once they're marked Approved / Sent to client.</p></div>`;
+    return;
+  }
+  const rows = approved.map(b=>{
+    const member = TEAM.find(m=>m.id===b.assigneeId);
+    const meta = EFFORT_META[b.effortLevel] || EFFORT_META.boleh;
+    return `<tr class="clickable" data-brief="${b.id}" style="cursor:pointer;">
+      <td>${escapeHtml(b.title)}</td>
+      <td>${member ? member.name : '—'}</td>
+      <td>${meta.emoji} ${meta.label}</td>
+      <td>${formatDate(b.createdAt)}</td>
+      <td>${formatDate(b.approvedAt)}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `
+    <table class="archive-table">
+      <thead><tr><th>Brief</th><th>Handled by</th><th>Effort</th><th>Assigned</th><th>Approved</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+  wrap.querySelectorAll('tr.clickable').forEach(tr=>{
+    tr.addEventListener('click', ()=> openBriefModal(tr.dataset.brief));
+  });
+}
+
+/* ---------------------------------------------------------
+   CALENDAR
+--------------------------------------------------------- */
+let calMode = 'team'; // 'team' | 'personal'
+let calPersonId = null;
+let calCursor = new Date(); // month currently displayed
+calCursor.setDate(1);
+
+document.getElementById('calToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.cal-toggle-btn'); if(!btn) return;
+  calMode = btn.dataset.mode;
+  document.querySelectorAll('.cal-toggle-btn').forEach(b=>b.classList.toggle('active', b===btn));
+  document.getElementById('calPersonWrap').style.display = calMode === 'personal' ? 'block' : 'none';
+  renderCalendar();
+});
+document.getElementById('calPrev').addEventListener('click', ()=>{
+  calCursor.setMonth(calCursor.getMonth()-1);
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', ()=>{
+  calCursor.setMonth(calCursor.getMonth()+1);
+  renderCalendar();
+});
+document.getElementById('calPersonSelect').addEventListener('change', (e)=>{
+  calPersonId = e.target.value;
+  renderCalendar();
+});
+
+function populateCalPersonSelect(){
+  const sel = document.getElementById('calPersonSelect');
+  sel.innerHTML = '';
+  ['JB','KL'].forEach(office=>{
+    const group = document.createElement('optgroup');
+    group.label = office + ' office';
+    TEAM.filter(m=>m.office===office).forEach(m=>{
+      const opt = document.createElement('option');
+      opt.value = m.id; opt.textContent = m.name;
+      group.appendChild(opt);
+    });
+    sel.appendChild(group);
+  });
+  if(!calPersonId) calPersonId = TEAM[0].id;
+  sel.value = calPersonId;
+}
+
+function relevantBriefs(){
+  const active = briefs.filter(b=>b.status !== 'Approved');
+  if(calMode === 'personal'){
+    return active.filter(b=>b.assigneeId === calPersonId);
+  }
+  return active;
+}
+
+function renderCalendar(){
+  populateCalPersonSelect();
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent = calCursor.toLocaleDateString('en-GB',{month:'long', year:'numeric'});
+
+  const relevant = relevantBriefs();
+  const byDate = {};
+  relevant.forEach(b=>{
+    if(!b.dueDate) return;
+    (byDate[b.dueDate] = byDate[b.dueDate] || []).push(b);
+  });
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1; // Mon=0
+  if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  for(let i=0;i<startOffset;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items = byDate[dateStr] || [];
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (dateStr===todayStr ? ' today' : '') + (items.length ? ' has-items' : '');
+    cell.innerHTML = `<div class="cal-daynum">${d}</div>` + items.map(b=>`<div class="cal-item" title="${escapeHtml(b.title)}">${escapeHtml(b.title)}</div>`).join('');
+    grid.appendChild(cell);
+  }
+
+  renderAgenda(relevant);
+}
+
+function renderAgenda(relevant){
+  const wrap = document.getElementById('calAgenda');
+  const sorted = relevant.filter(b=>b.dueDate).slice().sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+  if(!sorted.length){
+    wrap.innerHTML = `<div class="empty-state"><h3>Nothing due</h3><p>${calMode==='personal' ? "This person doesn't have any active briefs right now." : "No active briefs on the books right now."}</p></div>`;
+    return;
+  }
+  wrap.innerHTML = sorted.map(b=>{
+    const member = TEAM.find(m=>m.id===b.assigneeId);
+    const meta = EFFORT_META[b.effortLevel] || EFFORT_META.boleh;
+    return `
+      <div class="agenda-row clickable" data-brief="${b.id}">
+        <div class="agenda-date">${formatDate(b.dueDate)}</div>
+        <div class="agenda-info">
+          <h4>${escapeHtml(b.title)}</h4>
+          <div class="meta">${member ? member.name : 'Unassigned'} &middot; ${meta.emoji} ${meta.label} &middot; ${b.status}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  wrap.querySelectorAll('.agenda-row.clickable').forEach(row=>{
+    row.addEventListener('click', ()=> openBriefModal(row.dataset.brief));
+  });
+}
+
+/* ---------------------------------------------------------
+   BRIEF DETAIL MODAL
+--------------------------------------------------------- */
+function openBriefModal(id){
+  const b = briefs.find(x=>x.id===id);
+  if(!b) return;
+  const member = TEAM.find(m=>m.id===b.assigneeId);
+  const meta = EFFORT_META[b.effortLevel] || EFFORT_META.boleh;
+  const conceptsHtml = (b.concepts||[]).map(c=>{
+    const chips = (c.suggestions||[]).map(s=>`<span class="chip" style="background:rgba(31,111,107,0.1); border-color:rgba(31,111,107,0.35); color:var(--teal-deep);">${escapeHtml(s)}</span>`).join('');
+    return `<div class="card" style="margin-top:10px; padding:16px;">
+      <h4 style="font-size:15px; margin-bottom:6px;">${escapeHtml(c.name)}</h4>
+      <p style="font-size:13.5px; color:var(--muted); margin:0;">${escapeHtml(c.angle)}</p>
+      ${chips ? `<div class="chip-row" style="margin-top:10px;">${chips}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('briefModalContent').innerHTML = `
+    <div class="eyebrow">${member ? member.name : 'Unassigned'} &middot; due ${formatDate(b.dueDate)}</div>
+    <h2 style="font-size:22px; margin-bottom:6px;">${escapeHtml(b.title)}</h2>
+    <div class="modal-meta-row">
+      <span class="effort-badge ${meta.cls}">${meta.emoji} ${meta.label}</span>
+      <span>Status: <strong style="color:var(--ink);">${b.status}</strong></span>
+    </div>
+    <div class="eyebrow">Team-ready brief</div>
+    <div class="team-ready-box">${buildTeamReadyHtml(b)}</div>
+    <div class="eyebrow" style="margin-top:20px;">3 story themes</div>
+    ${conceptsHtml}
+  `;
+  document.getElementById('briefModalOverlay').classList.add('open');
+}
+function closeBriefModal(){
+  document.getElementById('briefModalOverlay').classList.remove('open');
+}
+document.getElementById('briefModalClose').addEventListener('click', closeBriefModal);
+document.getElementById('briefModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'briefModalOverlay') closeBriefModal();
+});
+
+/* ---------------------------------------------------------
+   HELPERS
+--------------------------------------------------------- */
+function formatDate(d){
+  if(!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ---------------------------------------------------------
+   PERSISTENCE — backed by a small Cloudflare Worker + KV
+   namespace (see worker.js) so the whole team sees the same
+   live data. Set API_BASE to your deployed Worker's URL.
+--------------------------------------------------------- */
+const API_BASE = 'https://YOUR-WORKER-SUBDOMAIN.workers.dev'; // <-- EDIT ME after deploying worker.js (see DEPLOY-README.md)
+
+async function kvGet(key){
+  const res = await fetch(`${API_BASE}/api/storage?key=${encodeURIComponent(key)}`);
+  if(!res.ok) return null; // 404 = key not set yet, not an error
+  const data = await res.json();
+  return (data && data.value !== undefined) ? data.value : null;
+}
+async function kvSet(key, value){
+  const res = await fetch(`${API_BASE}/api/storage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, value }),
+  });
+  if(!res.ok) throw new Error('KV save failed with status ' + res.status);
+  return true;
+}
+
+const STORAGE_KEY = 'brief-bar-data';
+
+function setSyncStatus(text, isError){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = isError ? '#B4321A' : 'var(--muted)';
+}
+
+async function saveBriefsToStorage(){
+  setSyncStatus('Saving...');
+  try{
+    const payload = JSON.stringify({ briefs, briefCounter });
+    await kvSet(STORAGE_KEY, payload);
+    setSyncStatus('Saved ✓');
+  }catch(err){
+    console.error('Failed to save briefs:', err);
+    setSyncStatus('Not saved — check connection', true);
+  }
+}
+
+async function loadBriefsFromStorage(){
+  try{
+    const value = await kvGet(STORAGE_KEY);
+    if(value){
+      const parsed = JSON.parse(value);
+      briefs = parsed.briefs || [];
+      briefCounter = parsed.briefCounter || 1;
+    }
+    setSyncStatus('Saved ✓');
+  }catch(err){
+    // key not found yet is expected on first-ever use — not an error worth alarming over
+    console.warn('No saved data yet (or failed to load):', err);
+    setSyncStatus('Starting fresh');
+  }
+}
+
+/* ---------------------------------------------------------
+   TASKS / PROJECTS — shared storage (same pattern as briefs)
+--------------------------------------------------------- */
+const STORAGE_KEY_TASKS = 'brief-bar-tasks-data';
+
+async function saveTasksToStorage(){
+  setSyncStatus('Saving...');
+  try{
+    const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses });
+    await kvSet(STORAGE_KEY_TASKS, payload);
+    setSyncStatus('Saved ✓');
+  }catch(err){
+    console.error('Failed to save tasks:', err);
+    setSyncStatus('Not saved — check connection', true);
+  }
+}
+
+async function loadTasksFromStorage(){
+  try{
+    const value = await kvGet(STORAGE_KEY_TASKS);
+    if(value){
+      const parsed = JSON.parse(value);
+      projects = parsed.projects || [];
+      projectCounter = parsed.projectCounter || 1;
+      taskCounter = parsed.taskCounter || 1;
+      statuses = parsed.statuses || {};
+    }
+  }catch(err){
+    // key not found yet is expected on first-ever use
+    console.warn('No saved task data yet (or failed to load):', err);
+  }
+}
+
+/* ---------------------------------------------------------
+   CURRENT USER — stored in this browser's localStorage.
+   This is now genuinely per-device (unlike the Claude-artifact
+   version, which was tied to the Claude account viewing it) —
+   each person's own phone/laptop remembers who they are here.
+--------------------------------------------------------- */
+const CURRENT_USER_KEY = 'egen-current-user';
+
+async function saveCurrentUser(){
+  try{
+    localStorage.setItem(CURRENT_USER_KEY, currentUserId || '');
+  }catch(err){
+    console.warn('Could not save current user selection:', err);
+  }
+}
+
+async function loadCurrentUser(){
+  try{
+    const value = localStorage.getItem(CURRENT_USER_KEY);
+    if(value) currentUserId = value;
+  }catch(err){
+    // not picked yet on this device — expected on first run
+    console.warn('No saved current user yet:', err);
+  }
+}
+
+/* init */
+async function init(){
+  setSyncStatus('Loading saved data...');
+  await Promise.all([loadBriefsFromStorage(), loadTasksFromStorage(), loadCurrentUser()]);
+  setSyncStatus('Saved ✓');
+  populateAssigneeSelect();
+  renderCurrentUserLabel();
+  if(!currentUserId){ openWhoami(); }
+  const activeView = document.querySelector('.view.active');
+  if(activeView && activeView.id === 'view-team') renderBoard();
+  if(activeView && activeView.id === 'view-calendar') renderCalendar();
+  if(activeView && activeView.id === 'view-archive') renderArchive();
+}
+init();
+</script>
+</body>
+</html>
