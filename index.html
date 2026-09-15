@@ -2588,7 +2588,8 @@ function renderCalendar(){
     const items=(byDate[ds]||[]).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
     const cell=document.createElement('div');
     cell.className='cal-cell'+(ds===today?' today':'')+(items.length?' has-items':'');
-    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}>${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');
+    cell.dataset.date=ds;
+    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" draggable="${it.kind==='project'||it.kind==='brief'?'true':'false'}" data-cal-kind="${it.kind}" data-cal-id="${it.id}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}>${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');
     grid.appendChild(cell);
   }
   grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
