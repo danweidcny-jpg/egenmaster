@@ -1,0 +1,63 @@
+name: Enable task checklists
+
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-task-checklists.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Make every task a shared checklist item
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          files = [Path('index.html'), Path('egen-master-deck.html')]
+
+          old_project_checkbox = """${editable ? `<input type=\"checkbox\" ${t.done?'checked':''} data-task-toggle=\"${t.id}\">` : `<span class=\"status-dot ${t.done?'status-free':'status-busy'}\"></span>`}"""
+          new_project_checkbox = """<input type=\"checkbox\" ${t.done?'checked':''} data-task-toggle=\"${t.id}\" aria-label=\"Mark task complete\">"""
+
+          old_flat_row = """return `<div class=\"flat-row ${isProposal?'clickable':''}\" ${isProposal ? `data-brief=\"${item.id}\"` : ''}>"""
+          new_flat_row = """return `<div class=\"flat-row ${isProposal?'clickable':''} ${item.done?'done':''}\" ${isProposal ? `data-brief=\"${item.id}\"` : ''}>"""
+
+          old_flat_checkbox = """${editable ? `<input type=\"checkbox\" data-task-toggle=\"${item.id}\">` : `<span class=\"flat-row-icon\">${rowIcon}</span>`}"""
+          new_flat_checkbox = """${item.type === 'task' ? `<input type=\"checkbox\" ${item.done?'checked':''} data-task-toggle=\"${item.id}\" aria-label=\"Mark task complete\">` : `<span class=\"flat-row-icon\">${rowIcon}</span>`}"""
+
+          css_anchor = """  .flat-row-title{\n    font-weight:600; font-size:13.5px;\n    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;\n  }"""
+          css_replacement = css_anchor + """\n  .flat-row.done .flat-row-title{\n    color:var(--muted);\n    text-decoration:line-through;\n  }"""
+
+          for path in files:
+              text = path.read_text()
+              checks = [
+                  ('project checkbox', old_project_checkbox),
+                  ('flat row class', old_flat_row),
+                  ('flat checkbox', old_flat_checkbox),
+              ]
+              for label, old in checks:
+                  if old not in text:
+                      raise SystemExit(f'{path}: expected {label} pattern not found')
+              text = text.replace(old_project_checkbox, new_project_checkbox, 1)
+              text = text.replace(old_flat_row, new_flat_row, 1)
+              text = text.replace(old_flat_checkbox, new_flat_checkbox, 1)
+              if '.flat-row.done .flat-row-title' not in text:
+                  if css_anchor not in text:
+                      raise SystemExit(f'{path}: CSS anchor not found')
+                  text = text.replace(css_anchor, css_replacement, 1)
+              path.write_text(text)
+              print(f'Patched {path}')
+          PY
+      - name: Commit checklist UI
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Enable shared task checklists"
+          git push origin main
