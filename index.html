@@ -983,6 +983,11 @@
   .project-date-editor input[type="date"]{width:auto;min-width:150px;padding:7px 9px;font-size:12px;background:rgba(255,255,255,.55);}
   .task-due-input{width:auto!important;min-width:145px;padding:6px 8px!important;font-size:11px!important;background:rgba(255,255,255,.55)!important;}
 
+
+  .cal-item[draggable="true"]{cursor:grab;}
+  .cal-item[draggable="true"]:active{cursor:grabbing;}
+  .cal-cell.drag-over{outline:2px dashed var(--teal);outline-offset:-4px;background:rgba(62,143,118,.08);}
+
 </style>
 </head>
 <body>
@@ -2534,7 +2539,7 @@ function calendarDates(start,end){
   let d=new Date(start+'T00:00:00');
   const e=new Date((end||start)+'T00:00:00');
   if(isNaN(d)||isNaN(e)) return out;
-  for(;d<=e;d.setDate(d.getDate()+1)) out.push(d.toISOString().slice(0,10));
+  for(;d<=e;d.setDate(d.getDate()+1)) out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
   return out;
 }
 function getPersonalCalendarEntries(){
@@ -2546,6 +2551,24 @@ function getPersonalCalendarEntries(){
     if(p.dueDate) entries.push({id:'project-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal|quotation/i.test(p.title)?'Proposal / quotation due date':'Project event date'});
   });
   return entries;
+}
+function moveCalendarEntryToDate(kind, id, newDate){
+  if(kind==='project'){
+    const projectId = id.replace(/^project-/, '');
+    const p = projects.find(x=>x.id===projectId);
+    if(!p) return;
+    p.dueDate = newDate;
+    saveTasksToStorage();
+  }else if(kind==='brief'){
+    const b = briefs.find(x=>x.id===id);
+    if(!b) return;
+    b.dueDate = newDate;
+    saveBriefsToStorage();
+  }else{
+    return;
+  }
+  renderBoard();
+  renderCalendar();
 }
 function renderCalendar(){
   calPersonId=currentUserId;
@@ -2569,6 +2592,24 @@ function renderCalendar(){
     grid.appendChild(cell);
   }
   grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
+  grid.querySelectorAll('.cal-item[draggable="true"]').forEach(el=>{
+    el.addEventListener('dragstart', e=>{
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain', JSON.stringify({kind:el.dataset.calKind,id:el.dataset.calId}));
+    });
+  });
+  grid.querySelectorAll('.cal-cell:not(.empty)').forEach(cell=>{
+    cell.addEventListener('dragover', e=>{e.preventDefault();cell.classList.add('drag-over');});
+    cell.addEventListener('dragleave', ()=>cell.classList.remove('drag-over'));
+    cell.addEventListener('drop', e=>{
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      let payload;
+      try{payload=JSON.parse(e.dataTransfer.getData('text/plain'));}catch{return;}
+      if(!payload || !cell.dataset.date) return;
+      moveCalendarEntryToDate(payload.kind,payload.id,cell.dataset.date);
+    });
+  });
   renderAgenda(relevant);
 }
 function renderAgenda(relevant){
