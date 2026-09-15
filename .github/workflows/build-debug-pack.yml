@@ -1,0 +1,37 @@
+name: Build Claude debug pack
+
+on:
+  push:
+    branches:
+      - debug-pack-build
+    paths:
+      - '.github/workflows/build-debug-pack.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: debug-pack-build
+      - name: Build focused ZIP
+        run: |
+          mkdir -p EGEN-CLAUDE-DEBUG-PACK
+          cp index.html EGEN-CLAUDE-DEBUG-PACK/
+          cp worker.js EGEN-CLAUDE-DEBUG-PACK/
+          cp wrangler.toml EGEN-CLAUDE-DEBUG-PACK/
+          cp DEPLOY-README.md EGEN-CLAUDE-DEBUG-PACK/
+          cp HANDOFF-PROMPT.md EGEN-CLAUDE-DEBUG-PACK/
+          cp README-FIRST.md EGEN-CLAUDE-DEBUG-PACK/
+          cp ARCHITECTURE-CURRENT.md EGEN-CLAUDE-DEBUG-PACK/
+          cp CLAUDE-DEBUG-PROMPT.md EGEN-CLAUDE-DEBUG-PACK/
+          zip -r EGEN-CLAUDE-DEBUG-PACK.zip EGEN-CLAUDE-DEBUG-PACK
+      - name: Upload debug pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: EGEN-CLAUDE-DEBUG-PACK
+          path: EGEN-CLAUDE-DEBUG-PACK.zip
+          retention-days: 7
