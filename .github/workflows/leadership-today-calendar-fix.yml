@@ -1,0 +1,217 @@
+name: Leadership dashboard and calendar fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/leadership-today-calendar-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Patch leadership overview, Today focus and calendar
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          files=[Path('index.html'),Path('egen-master-deck.html')]
+
+          leadership_css=r'''
+  /* ---------- Leadership workload overview ---------- */
+  #leadershipOverview{margin-top:38px;}
+  .leader-member-card{background:var(--glass);border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-md);margin-bottom:10px;overflow:hidden;box-shadow:0 8px 28px rgba(30,40,35,.04);}
+  .leader-member-card summary{list-style:none;cursor:pointer;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .leader-member-card summary::-webkit-details-marker{display:none;}
+  .leader-member-left{display:flex;align-items:center;gap:11px;min-width:0;}
+  .leader-member-avatar{width:36px;height:36px;border-radius:50%;background:#DDEFF2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:0 0 auto;}
+  .leader-member-name{font-weight:750;font-size:14px;}
+  .leader-member-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .leader-counts{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+  .leader-count-pill{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:rgba(23,26,24,.06);color:var(--muted);white-space:nowrap;}
+  .leader-count-pill.waiting{background:var(--pastel-yellow);color:#8A5B00;}
+  .leader-details{padding:0 17px 16px;border-top:1px solid var(--line);}
+  .leader-project{padding:12px 0;border-bottom:1px solid var(--line);}
+  .leader-project:last-child{border-bottom:none;}
+  .leader-project-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:7px;}
+  .leader-project-title{font-weight:700;font-size:13px;}
+  .leader-project-date{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .leader-task-list{list-style:none;padding:0;margin:0;}
+  .leader-task-list li{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12.5px;}
+  .leader-task-check{width:14px;height:14px;margin-top:2px;accent-color:var(--teal);pointer-events:none;}
+  .leader-task-text.done{text-decoration:line-through;color:var(--muted);}
+  .leader-task-note{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+  .leader-empty{padding:14px 0;color:var(--muted);font-size:12.5px;}
+'''
+
+          leadership_js=r'''
+function isLeadershipUser(){
+  return ['m1','m5','m6'].includes(currentUserId); // Danwei JB/KL = Manager, Chen = Senior
+}
+function userRoleLabel(memberId){
+  if(memberId==='m1'||memberId==='m5') return 'Manager';
+  if(memberId==='m6') return 'Senior';
+  return 'Team';
+}
+function renderLeadershipOverview(){
+  const wrap=document.getElementById('leadershipOverview');
+  if(!wrap) return;
+  if(!isLeadershipUser()){
+    wrap.style.display='none';
+    wrap.innerHTML='';
+    return;
+  }
+  wrap.style.display='block';
+  const cards=TEAM.map(member=>{
+    const ps=projects.filter(p=>p.ownerId===member.id);
+    const openTasks=ps.flatMap(p=>(p.tasks||[]).map(t=>({p,t}))).filter(x=>!x.t.done);
+    const waiting=openTasks.filter(x=>x.t.waiting).length;
+    const activeBriefs=briefs.filter(b=>b.assigneeId===member.id&&b.status!=='Approved');
+    const initials=member.name.split(' ').map(x=>x[0]).slice(0,2).join('');
+    const status=STATUS_META[statuses[member.id]||'free']||STATUS_META.free;
+    const body=ps.length ? ps.map(p=>{
+      const tasks=(p.tasks||[]);
+      const taskHtml=tasks.length ? `<ul class="leader-task-list">${tasks.map(t=>`<li><input class="leader-task-check" type="checkbox" ${t.done?'checked':''}><span class="leader-task-text ${t.done?'done':''}">${escapeHtml(t.text)}</span>${t.waiting?'<span class="waiting-tag">Waiting</span>':''}${t.dueDate?`<span class="leader-task-note">${formatDate(t.dueDate)}</span>`:''}</li>`).join('')}</ul>` : '<div class="leader-empty">No tasks yet.</div>';
+      return `<div class="leader-project"><div class="leader-project-head"><div class="leader-project-title">${escapeHtml(p.title)}</div><div class="leader-project-date">${p.dueDate?formatDate(p.dueDate):''}</div></div>${taskHtml}</div>`;
+    }).join('') : '<div class="leader-empty">No active projects yet.</div>';
+    const briefHtml=activeBriefs.length ? `<div class="leader-project"><div class="leader-project-title" style="margin-bottom:6px;">Active proposals / briefs</div><ul class="leader-task-list">${activeBriefs.map(b=>`<li><span>📄</span><span>${escapeHtml(b.title)}</span>${b.dueDate?`<span class="leader-task-note">${formatDate(b.dueDate)}</span>`:''}</li>`).join('')}</ul></div>` : '';
+    return `<details class="leader-member-card"><summary><div class="leader-member-left"><div class="leader-member-avatar">${initials}</div><div><div class="leader-member-name">${escapeHtml(member.name)}</div><div class="leader-member-meta">${member.office} · ${userRoleLabel(member.id)} · ${status.emoji} ${status.label}</div></div></div><div class="leader-counts"><span class="leader-count-pill">${ps.length} projects</span><span class="leader-count-pill">${openTasks.length} open</span>${waiting?`<span class="leader-count-pill waiting">${waiting} waiting</span>`:''}</div></summary><div class="leader-details">${body}${briefHtml}</div></details>`;
+  }).join('');
+  wrap.innerHTML=`<div class="eyebrow">Management view</div><h2 class="page-title">Team workload</h2><p class="page-sub">Manager / Senior only — open a person to see their projects and task list.</p>${cards}`;
+}
+'''
+
+          calendar_block=r'''function relevantBriefs(){
+  return briefs.filter(b=>b.status !== 'Approved' && b.assigneeId === currentUserId);
+}
+function calendarDates(start,end){
+  const out=[];
+  let d=new Date(start+'T00:00:00');
+  const e=new Date((end||start)+'T00:00:00');
+  if(isNaN(d)||isNaN(e)) return out;
+  for(;d<=e;d.setDate(d.getDate()+1)) out.push(d.toISOString().slice(0,10));
+  return out;
+}
+function getPersonalCalendarEntries(){
+  const entries=[];
+  const mine=projects.filter(p=>p.ownerId===currentUserId);
+  const ownSchedules=schedules.filter(x=>x.ownerId===currentUserId);
+  const scheduleKeys=new Set(ownSchedules.map(x=>`${x.date}|${String(x.title||'').toLowerCase()}`));
+
+  relevantBriefs().forEach(b=>{
+    if(b.dueDate) entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',status:b.status,effortLevel:b.effortLevel,note:'Proposal due date'});
+  });
+  mine.forEach(p=>{
+    if(p.dueDate && !scheduleKeys.has(`${p.dueDate}|${String(p.title||'').toLowerCase()}`)) entries.push({id:'project-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal/i.test(p.title)?'Proposal due date':'Project / event date'});
+    (p.tasks||[]).forEach(t=>{
+      if(t.dueDate && !t.done) entries.push({id:t.id,kind:'task',title:t.text,date:t.dueDate,endDate:t.dueDate,time:t.time||'',note:p.title+(t.waiting?' · Waiting':'')});
+    });
+  });
+  ownSchedules.forEach(x=>{ if(x.date) entries.push({id:x.id,kind:'schedule',title:x.title,date:x.date,endDate:x.endDate||x.date,time:x.time||'',note:x.note||'Schedule'}); });
+  return entries;
+}
+function renderCalendar(){
+  calPersonId=currentUserId;
+  const year=calCursor.getFullYear(), month=calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent=calCursor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const relevant=getPersonalCalendarEntries();
+  const byDate={};
+  relevant.forEach(item=>calendarDates(item.date,item.endDate).forEach(d=>(byDate[d]=byDate[d]||[]).push(item)));
+  const grid=document.getElementById('calGrid'); grid.innerHTML='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});
+  const firstDay=new Date(year,month,1); let startOffset=firstDay.getDay()-1; if(startOffset<0) startOffset=6;
+  const daysInMonth=new Date(year,month+1,0).getDate(); const today=todayStr();
+  for(let i=0;i<startOffset;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items=(byDate[dateStr]||[]).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const cell=document.createElement('div'); cell.className='cal-cell'+(dateStr===today?' today':'')+(items.length?' has-items':'');
+    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''} title="${escapeHtml(it.title)}">${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');
+    grid.appendChild(cell);
+  }
+  grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
+  renderAgenda(relevant);
+}
+function renderAgenda(relevant){
+  const wrap=document.getElementById('calAgenda');
+  const sorted=relevant.slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(!sorted.length){wrap.innerHTML=`<div class="empty-state"><h3>Nothing scheduled</h3><p>No schedule, task due date, project date, or proposal deadline yet.</p></div>`;return;}
+  wrap.innerHTML=sorted.map(it=>{
+    const icon=it.kind==='brief'?'📄':it.kind==='task'?'☑️':it.kind==='project'?'🗂️':'📍';
+    const range=it.endDate&&it.endDate!==it.date?` → ${formatDate(it.endDate)}`:'';
+    const meta=`${it.time?it.time+' · ':''}${escapeHtml(it.note||it.kind)}${range}`;
+    return `<div class="agenda-row ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><div class="agenda-date">${formatDate(it.date)}</div><div class="agenda-info"><h4>${icon} ${escapeHtml(it.title)}</h4><div class="meta">${meta}</div></div></div>`;
+  }).join('');
+  wrap.querySelectorAll('.agenda-row.clickable').forEach(row=>row.addEventListener('click',()=>openBriefModal(row.dataset.brief)));
+}
+
+/* ---------------------------------------------------------
+   BRIEF DETAIL MODAL'''
+
+          for path in files:
+              text=path.read_text()
+
+              # CSS injection.
+              marker='</style>'
+              if leadership_css.strip() not in text:
+                  text=text.replace(marker,leadership_css+'\n'+marker,1)
+
+              # Ensure a leadership-only overview container exists directly after project progress.
+              if 'id="leadershipOverview"' not in text:
+                  anchor='''      <div class="section-block">\n        <h3>Project progress</h3>\n        <div id="sectionProjects"></div>\n      </div>'''
+                  if anchor not in text: raise SystemExit(f'{path}: project progress HTML anchor missing')
+                  text=text.replace(anchor,anchor+'\n\n      <div id="leadershipOverview" style="display:none;"></div>',1)
+
+              # Hide legacy Team / Active briefs section if still present.
+              text=text.replace('<div class="eyebrow" style="margin-top:38px;">Team</div>','<div class="eyebrow legacy-team-overview" style="display:none!important; margin-top:38px;">Team</div>',1)
+              text=text.replace('<div id="teamGrid"></div>','<div id="teamGrid" style="display:none!important;"></div>',1)
+              text=text.replace('<div class="brief-list">','<div class="brief-list" style="display:none!important;">',1)
+
+              # Today means active daily focus: undated open tasks + anything explicitly due today.
+              pattern=r'''function getTodayItems\(allItems\)\{.*?\n\}'''
+              replacement="""function getTodayItems(allItems){
+  const items = allItems || getAllItemsFlat();
+  const today = todayStr();
+  return items.filter(t=>!t.done && ((t.type==='task' && (!t.dueDate || t.dueDate===today)) || (t.type!=='task' && t.dueDate===today)));
+}"""
+              text,n=re.subn(pattern,replacement,text,count=1,flags=re.S)
+              if n!=1: raise SystemExit(f'{path}: getTodayItems replacement count {n}')
+
+              # Add leadership helper functions before celebration section.
+              marker='/* ---------------------------------------------------------\n   CELEBRATION ANIMATION'
+              if 'function renderLeadershipOverview()' not in text:
+                  if marker not in text: raise SystemExit(f'{path}: celebration marker missing')
+                  text=text.replace(marker,leadership_js+'\n'+marker,1)
+
+              # Ensure renderBoard calls management overview.
+              old='''  renderProjectProgressSection();'''
+              new='''  renderProjectProgressSection();\n  renderLeadershipOverview();'''
+              if new not in text:
+                  if old not in text: raise SystemExit(f'{path}: renderBoard project anchor missing')
+                  text=text.replace(old,new,1)
+
+              # Refresh management overview on user switch immediately.
+              old='''        renderBoard();\n      });'''
+              # renderBoard now handles it; no extra code required.
+
+              # Replace the current calendar implementation wholesale for reliable schedule/task/project/proposal support.
+              pattern=r'''function relevantBriefs\(\)\{.*?/\* ---------------------------------------------------------\n   BRIEF DETAIL MODAL'''
+              text,n=re.subn(pattern,calendar_block,text,count=1,flags=re.S)
+              if n!=1: raise SystemExit(f'{path}: calendar block replacement count {n}')
+
+              path.write_text(text)
+              print('Patched',path)
+          PY
+      - name: Commit dashboard fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Add leadership workload view and fix Today calendar"
+          git push origin main
