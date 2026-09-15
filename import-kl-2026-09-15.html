@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>EGEN KL Import 15 Sep</title><pre id="out">RUNNING...</pre><script>
+const API='https://egen-master-deck-api.danwei.workers.dev/api/storage';
+const KEY='brief-bar-tasks-data';
+const out=document.getElementById('out');
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+async function getData(){const r=await fetch(API+'?key='+encodeURIComponent(KEY),{cache:'no-store'});if(!r.ok)throw new Error('GET '+r.status);const j=await r.json();return j.value?JSON.parse(j.value):{projects:[],projectCounter:1,taskCounter:1,statuses:{},schedules:[],scheduleCounter:1};}
+async function putData(d){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,value:JSON.stringify(d)})});if(!r.ok)throw new Error('POST '+r.status);}
+function maxId(arr,prefix){let m=0;for(const x of arr){const z=String(x.id||'').match(new RegExp('^'+prefix+'(\\d+)$'));if(z)m=Math.max(m,+z[1]);}return m;}
+(async()=>{try{
+ const d=await getData(); d.projects=d.projects||[]; d.schedules=d.schedules||[]; d.statuses=d.statuses||{};
+ let pCounter=Math.max(d.projectCounter||1,maxId(d.projects,'p')+1); let allTasks=d.projects.flatMap(p=>p.tasks||[]); let tCounter=Math.max(d.taskCounter||1,maxId(allTasks,'t')+1); let sCounter=Math.max(d.scheduleCounter||1,maxId(d.schedules,'s')+1);
+ const nextP=()=> 'p'+(pCounter++), nextT=()=> 't'+(tCounter++), nextS=()=> 's'+(sCounter++);
+ function findProjects(owner,key){const n=norm(key);return d.projects.filter(p=>p.ownerId===owner&&norm(p.title).includes(n));}
+ function ensureProject(owner,title,due='',key=title){let ms=findProjects(owner,key),p=ms[0];if(!p){p={id:nextP(),ownerId:owner,title,dueDate:due,tasks:[],createdAt:'2026-09-15'};d.projects.push(p);}for(const dup of ms.slice(1)){for(const t of dup.tasks||[]){if(!(p.tasks||[]).some(x=>norm(x.text)===norm(t.text)))p.tasks.push(t);}d.projects=d.projects.filter(x=>x!==dup);}p.ownerId=owner;p.title=title;if(due!==undefined)p.dueDate=due;p.tasks=p.tasks||[];return p;}
+ function ensureTask(p,text,due='',waiting=false,done=false,aliases=[]){const keys=[text,...aliases].map(norm);let t=p.tasks.find(x=>keys.includes(norm(x.text)));if(!t){t={id:nextT(),text,done,waiting,dueDate:due};p.tasks.push(t);}else{t.text=text;t.done=done;t.waiting=waiting;t.dueDate=due;}return t;}
+ function ensureSchedule(owner,title,date,time='',endDate='',note='',key=title+'|'+date+'|'+time){let s=d.schedules.find(x=>x.ownerId===owner&&norm(x.title+'|'+x.date+'|'+(x.time||''))===norm(key));if(!s){s={id:nextS(),ownerId:owner,title,date,endDate:endDate||date,time,note};d.schedules.push(s);}else{Object.assign(s,{title,date,endDate:endDate||date,time,note});}return s;}
+ // Force Impian Night Run to Xinyee (m2), merging/removing any copies under Eunice (m3).
+ let x=findProjects('m2','impian night run')[0]; const e=findProjects('m3','impian night run');
+ if(!x&&e.length){x=e.shift();x.ownerId='m2';}
+ if(x){for(const ep of e){for(const t of ep.tasks||[]){if(!(x.tasks||[]).some(q=>norm(q.text)===norm(t.text)))x.tasks.push(t);}d.projects=d.projects.filter(q=>q!==ep);}x.ownerId='m2';x.title='Impian Night Run (05/12)';x.dueDate='2026-12-05';}
+ // ETHAN m9
+ let p=ensureProject('m9','HN Flagship Malaysia Day','','hn flagship malaysia day');ensureTask(p,'Supplier payment');ensureTask(p,'Crew payment');
+ p=ensureProject('m9','HN Flagship 2nd Anniversary Proposal','','hn flagship 2nd anniversary');ensureTask(p,'Prepare HN Flagship 2nd Anniversary proposal');
+ p=ensureProject('m9','HN La-Z-Boy Launching Proposal Revision','','la z boy');ensureTask(p,'Revise HN La-Z-Boy launching proposal');ensureTask(p,'Pending IA rate','',true);
+ p=ensureProject('m9','Canva AI Testing','','canva ai');ensureTask(p,'Canva AI testing');
+ ensureSchedule('m9','HN Coalfield Setup','2026-09-24');ensureSchedule('m9','HN Coalfield Opening','2026-09-25');
+ // ESTHER m10
+ p=ensureProject('m10','Klippa Kita Kontinjen Malaysia','','klippa kita');for(const t of ['Workshop supplier reminder','Supplier dismantle reminder','Arrange crew payment'])ensureTask(p,t);
+ p=ensureProject('m10','Wistron Family Day','','wistron family day');for(const t of ['Update vendor list','Blast and recruit vendor','Find branded vendor','Update gimmick costing'])ensureTask(p,t);
+ p=ensureProject('m10','DP Drawing Deck','','dp drawing deck');ensureTask(p,'DP drawing deck');
+ ensureSchedule('m10','Harvey Norman Coalfield Opening','2026-09-25');
+ // RACHEL m8
+ p=ensureProject('m8','以美之名 (18 October)','2026-10-18','以美之名');ensureTask(p,'Revise 2D & 3D Layout');ensureTask(p,'Revise Guinness World Record layout');ensureTask(p,'Rundown');ensureTask(p,'Rehearsal Plan (pending artist)','',true);ensureTask(p,'Crew');ensureTask(p,'Get venue update');ensureTask(p,'Voting Mechanism');
+ p=ensureProject('m8','Helms Family Day','','helms family day');ensureTask(p,'Revise Proposal & Costing');
+ p=ensureProject('m8','Proposal ✅','','proposal');for(const t of ['IOI 16 Sierra Mid Autumn','Sedunia Travel Langkawi Costing','Ctrip International Travel Annual Dinner','Auceron Annual Dinner'])ensureTask(p,t,'',false,true);
+ ensureSchedule('m8','Element Hotel','2026-09-15','14:00');ensureSchedule('m8','LS Meeting','2026-09-16','20:00');ensureSchedule('m8','GWR Meeting','2026-09-18','10:30');ensureSchedule('m8','GWR Meeting','2026-09-22','13:00');
+ // LIWEN m7
+ p=ensureProject('m7','Harvey Norman Coalfields Opening (25-27 Sep)','2026-09-25','harvey norman coalfields');for(const t of ['Approval Deck','Find crew','Work Permit','Action Plan','Dismantle Plan'])ensureTask(p,t);
+ p=ensureProject('m7','Bridge Data Center D&D KL','2026-12-18','bridge data center');ensureTask(p,'Foldable bag design','2026-09-11');
+ p=ensureProject('m7','Other','','other');ensureTask(p,'Gimmick costing','2026-09-11');
+ p=ensureProject('m7','The Jing House Opening','2026-08-21','jing house');ensureTask(p,'Track balance payment');ensureTask(p,'Video feedback');
+ p=ensureProject('m7','Track Payment (September)','','track payment');for(const t of ['China Southern Airlines (September)','VBH 8th Anniversary (September)'])ensureTask(p,t);
+ ensureSchedule('m7','Coalfields Recce','2026-09-11','14:00');ensureSchedule('m7','Harvey Norman Coalfields Opening','2026-09-25','', '2026-09-27');ensureSchedule('m7','On Leave','2026-09-12','', '2026-09-16');ensureSchedule('m7','Klippa Merdeka Activation','2026-08-14','', '2026-09-20');ensureSchedule('m7','Bridge Data Center D&D KL','2026-12-18');ensureSchedule('m7','The Jing House Opening','2026-08-21');
+ d.projectCounter=pCounter;d.taskCounter=tCounter;d.scheduleCounter=sCounter;
+ await putData(d);
+ const v=await getData();
+ const names={m2:'Xinyee',m7:'Liwen',m8:'Rachel',m9:'Ethan',m10:'Esther'};let lines=['SUCCESS'];for(const id of Object.keys(names)){const ps=v.projects.filter(p=>p.ownerId===id);const ss=(v.schedules||[]).filter(s=>s.ownerId===id);lines.push('\n'+names[id]+': '+ps.length+' projects, '+ss.length+' schedules');for(const q of ps)lines.push('- '+q.title+' ['+(q.tasks||[]).length+' tasks]');for(const z of ss)lines.push('  CAL '+z.date+(z.endDate&&z.endDate!==z.date?'→'+z.endDate:'')+(z.time?' '+z.time:'')+' '+z.title);}
+ const imp=v.projects.find(p=>p.ownerId==='m2'&&norm(p.title).includes('impian night run'));lines.push('\nImpian owner: '+(imp?'Xinyee':'NOT FOUND'));
+ out.textContent=lines.join('\n');
+}catch(e){out.textContent='FAILED\n'+e.stack;}})();
+</script>
