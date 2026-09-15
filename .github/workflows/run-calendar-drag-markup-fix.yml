@@ -1,0 +1,26 @@
+name: Run calendar drag markup fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/run-calendar-drag-markup-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply calendar drag markup fix
+        run: python scripts/calendar_drag_markup_fix.py
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Enable draggable calendar items"
+          git push origin main
