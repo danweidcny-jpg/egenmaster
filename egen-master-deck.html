@@ -1268,6 +1268,17 @@ function getMasterBriefs(){
     return (a.title||'').localeCompare(b.title||'');
   });
 }
+function briefPointValue(b, label){
+  const p=(b.points||[]).find(x=>x.label===label);
+  return p && p.value ? String(p.value).trim() : '';
+}
+function masterDisplayTitle(b){
+  const client=briefPointValue(b,'Company / Client');
+  const eventType=briefPointValue(b,'Event type');
+  const location=briefPointValue(b,'Venue / Location');
+  const clean=v=>v && !/^not specified/i.test(v) ? v : '';
+  return [clean(client)||'Client TBC', clean(eventType)||'Event', clean(location)||'Location TBC'].join(' - ');
+}
 function masterBriefType(b){
   const hay=((b.title||'')+' '+(b.rawBrief||'')).toLowerCase();
   if(hay.includes('quotation') || hay.includes('quote')) return 'Quotation';
@@ -1302,7 +1313,7 @@ function renderMasterView(){
     const member=TEAM.find(m=>m.id===b.assigneeId);
     const dueClass=b.dueDate<today?'overdue':(b.dueDate===today?'today':'');
     return `<tr data-master-brief="${b.id}">
-      <td><strong>${escapeHtml(b.title)}</strong></td>
+      <td><strong>${escapeHtml(masterDisplayTitle(b))}</strong></td>
       <td>${escapeHtml(masterBriefType(b))}</td>
       <td>${member?escapeHtml(member.name):'—'}</td>
       <td class="master-due ${dueClass}">${b.dueDate?formatDate(b.dueDate):'—'}</td>
@@ -1731,11 +1742,12 @@ function analyzeAndGenerate(rawText){
     effortReason = 'Straightforward scope with the essentials already clear.';
   }
 
-  // --- title ---
-  const titleParts = [found['Event type'] || template.label];
-  if(paxNumber) titleParts.push(`${paxNumber} pax`);
-  if(locationDisplay) titleParts.push(`at ${locationDisplay}`);
-  const title = titleParts.join(' — ');
+  // --- title: Client Name - Event Type - Location ---
+  const title = [
+    found['Client'] || 'Client TBC',
+    found['Event type'] || template.label,
+    locationDisplay || 'Location TBC'
+  ].join(' - ');
 
   // --- team-ready points (beautified, in points form) ---
   const points = [];
@@ -1835,7 +1847,7 @@ function buildResultFromAI(parsed, rawText){
   points.push({ label:'Flags', value: (parsed.flags && parsed.flags.length) ? parsed.flags.join(', ') : 'None noted' });
 
   return {
-    title: parsed.title || parsed.eventTypeLabel || 'Untitled brief',
+    title: [parsed.companyClient || 'Client TBC', parsed.eventTypeLabel || 'Event', parsed.venue || 'Location TBC'].join(' - '),
     points,
     clientAsks: parsed.specialRequirements || [],
     concepts: (parsed.storyThemes || []).map(s => ({ name:s.name, angle:s.angle, suggestions:s.suggestions || [] })),
