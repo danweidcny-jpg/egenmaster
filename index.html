@@ -977,6 +977,12 @@
   .leader-task-text.done{text-decoration:line-through;color:var(--muted);}
   .leader-task-note{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;}
 
+
+  .project-title-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0;}
+  .project-date-editor{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-weight:600;}
+  .project-date-editor input[type="date"]{width:auto;min-width:150px;padding:7px 9px;font-size:12px;background:rgba(255,255,255,.55);}
+  .task-due-input{width:auto!important;min-width:145px;padding:6px 8px!important;font-size:11px!important;background:rgba(255,255,255,.55)!important;}
+
 </style>
 </head>
 <body>
@@ -1060,7 +1066,6 @@
         <div class="status-picker" id="myStatusPicker"></div>
       </div>
 
-      <div class="bento-summary-row" id="bentoSummaryRow"></div>
 
       <div class="new-project-card" style="margin-bottom:34px;">
         <div class="eyebrow" style="margin-bottom:10px;">Add a project or task</div>
@@ -1072,15 +1077,6 @@
         <div id="newProjectError" style="display:none; margin-top:10px; font-size:12.5px; color:var(--coral-deep); font-weight:600;"></div>
       </div>
 
-      <div class="section-block">
-        <div class="priority-tabs" id="priorityTabs">
-          <button class="priority-tab active" data-tab="today">Today <span class="tab-count" id="countToday">0</span></button>
-          <button class="priority-tab" data-tab="overdue">Overdue <span class="tab-count" id="countOverdue">0</span></button>
-          <button class="priority-tab" data-tab="waiting" title="Waiting on client / supplier">Waiting <span class="tab-count" id="countWaiting">0</span></button>
-          <button class="priority-tab" data-tab="upcoming">Upcoming <span class="tab-count" id="countUpcoming">0</span></button>
-        </div>
-        <div id="priorityList"></div>
-      </div>
 
       <div class="section-block">
         <h3>Project progress</h3>
@@ -1094,7 +1090,7 @@
     <section class="view" id="view-calendar">
       <div class="eyebrow">Due dates</div>
       <h2 class="page-title">My Calendar</h2>
-      <p class="page-sub">Your own deadlines and confirmed schedule in one place.</p>
+      <p class="page-sub">Project event dates and proposal / quotation due dates only.</p>
 
       <div class="row" style="align-items:center; margin-bottom:18px;">
         <div class="col" style="max-width:260px; min-width:180px;">
@@ -1248,6 +1244,10 @@ document.getElementById('addProjectBtn').addEventListener('click', ()=>{
 
 /* delegated listeners for dynamically-rendered project/task controls */
 document.addEventListener('change', (e)=>{
+  const projectDate = e.target.closest('[data-project-event-date]');
+  if(projectDate){ updateProjectEventDate(projectDate.dataset.projectEventDate, projectDate.value); return; }
+  const taskDue = e.target.closest('[data-task-due-edit]');
+  if(taskDue){ updateTaskDueDate(taskDue.dataset.taskDueEdit, taskDue.value); return; }
   const toggle = e.target.closest('[data-task-toggle]');
   if(toggle){ toggleTask(toggle.dataset.taskToggle); return; }
   const briefStatus = e.target.closest('[data-brief-status]');
@@ -1941,23 +1941,39 @@ function toggleWaiting(taskId){
   saveTasksToStorage();
   renderBoard();
 }
+function updateProjectEventDate(projectId, value){
+  const p = projects.find(x=>x.id===projectId);
+  if(!p) return;
+  p.dueDate = value || '';
+  saveTasksToStorage();
+  renderBoard();
+}
+function updateTaskDueDate(taskId, value){
+  for(const p of projects){
+    const t = (p.tasks||[]).find(x=>x.id===taskId);
+    if(t){ t.dueDate = value || ''; break; }
+  }
+  saveTasksToStorage();
+  renderBoard();
+}
 function buildProjectCardHtml(project, editable){
   const { total, done, overdue } = projectStats(project);
   const pct = total ? Math.round((done/total)*100) : 0;
+  const isProposalProject = /proposal|quotation/i.test(project.title);
   const tasksHtml = project.tasks.map(t=>{
     const isOverdue = !t.done && t.dueDate && t.dueDate < todayStr();
     return `<li class="${t.done?'done':''}">
       <input type="checkbox" ${t.done?'checked':''} data-task-toggle="${t.id}" aria-label="Mark task complete">
       <span class="task-text">${escapeHtml(t.text)}</span>
       ${t.waiting ? '<span class="waiting-tag">Waiting</span>' : ''}
-      ${t.dueDate ? `<span class="task-due ${isOverdue?'overdue':''}">${isOverdue?'Overdue · ':''}${formatDate(t.dueDate)}</span>` : ''}
+      ${editable ? `<input type="date" class="task-due-input" value="${t.dueDate||''}" data-task-due-edit="${t.id}" title="Task due date">` : (t.dueDate ? `<span class="task-due ${isOverdue?'overdue':''}">${isOverdue?'Overdue · ':''}${formatDate(t.dueDate)}</span>` : '')}
       ${editable ? `<button class="task-waiting-btn ${t.waiting?'active':''}" data-task-waiting="${t.id}" title="Waiting on client / supplier">⏳</button>` : ''}
       ${editable ? `<button class="task-del" data-task-del="${t.id}" title="Remove task">&times;</button>` : ''}
     </li>`;
   }).join('');
   return `<div class="project-card">
     <div class="project-head">
-      <h4>${escapeHtml(project.title)}</h4>
+      <div class="project-title-line"><h4>${escapeHtml(project.title)}</h4>${editable ? `<label class="project-date-editor"><span>${isProposalProject?'Due date':'Event date'}</span><input type="date" value="${project.dueDate||''}" data-project-event-date="${project.id}"></label>` : (project.dueDate ? `<span class="project-date-editor">${isProposalProject?'Due':'Event'} ${formatDate(project.dueDate)}</span>` : '')}</div>
       <div class="project-meta-row">
         ${overdue ? '<span class="overdue-tag">Overdue</span>' : ''}
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -1965,7 +1981,6 @@ function buildProjectCardHtml(project, editable){
         ${editable ? `<button class="project-del-btn" data-project-del="${project.id}">Delete</button>` : ''}
       </div>
     </div>
-    ${project.dueDate ? `<div style="font-size:12px; color:var(--muted); margin-top:2px;">Due ${formatDate(project.dueDate)}</div>` : ''}
     <ul class="task-list">${tasksHtml || '<li style="color:var(--muted); border-top:none;">No tasks yet</li>'}</ul>
     ${editable ? `
     <div class="add-task-row">
@@ -2498,16 +2513,10 @@ function calendarDates(start,end){
 function getPersonalCalendarEntries(){
   const entries=[];
   relevantBriefs().forEach(b=>{
-    if(b.dueDate) entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',note:'Proposal due date'});
+    if(b.dueDate) entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',note:'Proposal / quotation due date'});
   });
   projects.filter(p=>p.ownerId===currentUserId).forEach(p=>{
-    if(p.dueDate) entries.push({id:'project-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal/i.test(p.title)?'Proposal due date':'Project / event date'});
-    (p.tasks||[]).forEach(t=>{
-      if(t.dueDate&&!t.done) entries.push({id:t.id,kind:'task',title:t.text,date:t.dueDate,endDate:t.dueDate,time:t.time||'',note:p.title+(t.waiting?' · Waiting':'')});
-    });
-  });
-  schedules.filter(s=>s.ownerId===currentUserId).forEach(s=>{
-    if(s.date) entries.push({id:s.id,kind:'schedule',title:s.title,date:s.date,endDate:s.endDate||s.date,time:s.time||'',note:s.note||'Schedule'});
+    if(p.dueDate) entries.push({id:'project-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal|quotation/i.test(p.title)?'Proposal / quotation due date':'Project event date'});
   });
   return entries;
 }
