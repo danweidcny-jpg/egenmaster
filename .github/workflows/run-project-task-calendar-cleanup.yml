@@ -1,0 +1,26 @@
+name: Run project task calendar cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/run-project-task-calendar-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply cleanup
+        run: python scripts/project_task_calendar_cleanup.py
+      - name: Commit result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Simplify project tasks and calendar" || exit 0
+          git push origin main
