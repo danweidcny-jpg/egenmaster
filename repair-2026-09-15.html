@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>EGEN Repair 2026-09-15</title></head>
+<body><pre id="out">Running one-time repair…</pre>
+<script>
+(async()=>{
+  const out=document.getElementById('out');
+  const API='https://egen-master-deck-api.danwei.workers.dev/api/storage';
+  const KEY='brief-bar-tasks-data';
+  const CREATED='2026-09-15';
+  const log=(...x)=>{out.textContent += '\n'+x.join(' ')};
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  try{
+    const gr=await fetch(`${API}?key=${encodeURIComponent(KEY)}`,{cache:'no-store'});
+    let data={projects:[],projectCounter:1,taskCounter:1,statuses:{}};
+    if(gr.ok){ const outer=await gr.json(); if(outer.value) data=JSON.parse(outer.value); }
+    else if(gr.status!==404) throw new Error('GET failed '+gr.status);
+    const projects=data.projects||[];
+    data.statuses=data.statuses||{};
+
+    const nextId=prefix=>{
+      let max=0;
+      if(prefix==='p'){
+        for(const p of projects){ const m=String(p.id||'').match(/^p(\d+)$/); if(m) max=Math.max(max,+m[1]); }
+      }else{
+        for(const p of projects) for(const t of (p.tasks||[])){ const m=String(t.id||'').match(/^t(\d+)$/); if(m) max=Math.max(max,+m[1]); }
+      }
+      return prefix+(max+1);
+    };
+    const findProjects=(owner,contains)=>{
+      const needle=norm(contains);
+      return projects.filter(p=>p.ownerId===owner && norm(p.title).includes(needle));
+    };
+    const mergeDupes=(base,dupes)=>{
+      base.tasks=base.tasks||[];
+      for(const dup of dupes){
+        for(const t of (dup.tasks||[])) if(!base.tasks.some(x=>norm(x.text)===norm(t.text))) base.tasks.push(t);
+        const i=projects.indexOf(dup); if(i>=0) projects.splice(i,1);
+      }
+    };
+    const ensureProject=(owner,title,due='',contains=title)=>{
+      const matches=findProjects(owner,contains);
+      let p;
+      if(matches.length){ p=matches[0]; mergeDupes(p,matches.slice(1)); }
+      else { p={id:nextId('p'),ownerId:owner,title,dueDate:due,tasks:[],createdAt:CREATED}; projects.push(p); }
+      p.ownerId=owner; p.title=title; p.dueDate=due; p.tasks=p.tasks||[]; p.createdAt=p.createdAt||CREATED;
+      return p;
+    };
+    const findTask=(p,text,aliases=[])=>{
+      const keys=[text,...aliases].map(norm);
+      return (p.tasks||[]).find(t=>keys.includes(norm(t.text)));
+    };
+    const ensureTask=(p,text,due='',waiting=false,aliases=[])=>{
+      let t=findTask(p,text,aliases);
+      if(!t){ t={id:nextId('t'),text,done:false,waiting,dueDate:due}; p.tasks.push(t); }
+      else { t.text=text; if(typeof t.done!=='boolean') t.done=false; t.waiting=waiting; t.dueDate=due; }
+      return t;
+    };
+
+    // Move/merge any wrongly assigned Impian Night Run from Eunice to Xinyee.
+    let xImp=findProjects('m2','impian night run');
+    let eImp=findProjects('m3','impian night run');
+    if(xImp.length){ mergeDupes(xImp[0],eImp); }
+    else if(eImp.length){ eImp[0].ownerId='m2'; mergeDupes(eImp[0],eImp.slice(1)); }
+
+    // Xinyee
+    let p=ensureProject('m2','PRO3C (15/10)','2026-10-15','pro3c');
+    [
+      ['Double check master list',''],['Follow up door gift status',''],['Follow up on design and client approval deck',''],
+      ['Follow up media invitation letter from client',''],['Follow up beach flag status',''],['PRO3C Grand Opening','2026-10-15']
+    ].forEach(([t,d])=>ensureTask(p,t,d,false));
+
+    p=ensureProject('m2','Impian Night Run (05/12)','2026-12-05','impian night run');
+    [
+      ['Track participants every Monday & Thursday',''],['Follow up inflatable arch design direction',''],['Follow up live band selection',''],
+      ['Check social media visual and update Shimin',''],['Arrange documents for license application',''],['Follow up with MSNJ',''],
+      ['Arrange & purchase Taobao items',''],['Cut off shirt quantity (1st batch)','2026-09-15'],['Install banner at school in November',''],
+      ['Pass Impian Run bunting to office and school','2026-09-15'],['Impian Run Roadshow (19-20/09)','2026-09-19']
+    ].forEach(([t,d])=>ensureTask(p,t,d,false));
+
+    p=ensureProject('m2','WASB Annual Dinner Proposal','2026-09-15','wasb annual dinner');
+    ensureTask(p,'Prepare / complete WASB Annual Dinner proposal','2026-09-15',false);
+    p=ensureProject('m2','Tianje Booth Dismantle','2026-09-24','tianje');
+    ensureTask(p,'Tianje booth dismantle','2026-09-24',false);
+
+    // Eunice
+    p=ensureProject('m3','Temokin VP Event (10-11/10)','2026-10-10','temokin vp event');
+    ['Follow up gimmick box production','Revise design approval to latest date','Arrange Viral Platform 1st draft preview','Arrange media form','Arrange emcee brief','Arrange console brief','Arrange action plan'].forEach(t=>ensureTask(p,t,'',false));
+    p=ensureProject('m3','BDC D&D','','bdc d d');
+    ['Arrange timeline','Follow up packaging rate','Arrange slides design'].forEach(t=>ensureTask(p,t,'',false));
+    p=ensureProject('m3','Gaya Centre Xmas Deco','','gaya centre xmas deco');
+    ['Purchase inflatable deco - Taobao','Arrange timeline'].forEach(t=>ensureTask(p,t,'',false));
+    p=ensureProject('m3','Ormond’s Lunch Menu - Anantara','','ormond');
+    ensureTask(p,'Follow up Ormond’s Lunch Menu - Anantara','',false);
+
+    // Xiang Ting
+    p=ensureProject('m4','Mr DIY Bazaar 2026 (11/9-13/9)','','mr diy bazaar');
+    ensureTask(p,'Arrange crew payment','',false); ensureTask(p,'Update Danwei the daily number of crew that I found','',false);
+    p=ensureProject('m4','I-Stays Grand Opening (XX/10)','','i stays grand opening');
+    ensureTask(p,'Arrange beachflag order','',false);
+    ensureTask(p,'Arrange emcee brief — pending rundown from client','',true,['Arrange emcee brief','Arrange emcee brief > pending rundown from client']);
+    ensureTask(p,'Event date XX/10 — Pending confirmation','',true);
+    p=ensureProject('m4','Temokin VP Event (10-11/10)','2026-10-10','temokin vp event');
+    ensureTask(p,'Inform vendors the finalized event date and confirm their availability','2026-09-18',false);
+    p=ensureProject('m4','Impian Xmas 2026','','impian xmas 2026');
+    ensureTask(p,'Research more performances standby for Impian Xmas 2026','',false);
+
+    let pMax=0,tMax=0;
+    for(const pr of projects){ const pm=String(pr.id||'').match(/^p(\d+)$/); if(pm)pMax=Math.max(pMax,+pm[1]); for(const t of (pr.tasks||[])){const tm=String(t.id||'').match(/^t(\d+)$/);if(tm)tMax=Math.max(tMax,+tm[1]);}}
+    data.projects=projects; data.projectCounter=pMax+1; data.taskCounter=tMax+1;
+
+    const wr=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,value:JSON.stringify(data)})});
+    if(!wr.ok) throw new Error('POST failed '+wr.status+' '+await wr.text());
+
+    const verify=await fetch(`${API}?key=${encodeURIComponent(KEY)}`,{cache:'no-store'});
+    if(!verify.ok) throw new Error('VERIFY GET failed '+verify.status);
+    const vo=await verify.json(); const v=JSON.parse(vo.value);
+    out.textContent='SUCCESS — 15/09 task repair completed';
+    const names={m2:'Xinyee',m3:'Eunice',m4:'Xiang Ting'};
+    for(const owner of ['m2','m3','m4']){
+      log('\n'+names[owner]);
+      for(const pr of v.projects.filter(x=>x.ownerId===owner)){
+        log('-',pr.title,'|',pr.tasks.length,'tasks','| due',pr.dueDate||'—');
+        for(const t of pr.tasks) log(' ',t.done?'[x]':'[ ]',t.text,'| due',t.dueDate||'—',t.waiting?'| WAITING':'');
+      }
+    }
+  }catch(err){ out.textContent='FAILED — '+err.message; console.error(err); }
+})();
+</script></body></html>
