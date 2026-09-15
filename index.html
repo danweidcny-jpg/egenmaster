@@ -871,6 +871,7 @@
     border:1px solid var(--line); border-radius:9px;
     background:var(--paper);
   }
+  .other-project-list,.member-briefs{display:none!important;}
   .other-project-list{list-style:none; margin:6px 0 0; padding:0;}
   .other-project-list li{
     padding:6px 0; border-top:1px solid var(--line);
@@ -1063,7 +1064,7 @@
 
       <div class="eyebrow" style="margin-top:38px;">Team</div>
       <h2 class="page-title">Who's got room right now</h2>
-      <p class="page-sub">Everyone's status, projects, and active briefs, grouped by office — visible to the whole team, not just management.</p>
+      <p class="page-sub">Team availability only. Project and task details stay private to each person.</p>
 
       <div id="teamGrid"></div>
 
@@ -1077,17 +1078,17 @@
     <!-- ===================== CALENDAR VIEW ===================== -->
     <section class="view" id="view-calendar">
       <div class="eyebrow">Due dates</div>
-      <h2 class="page-title">Calendar</h2>
-      <p class="page-sub">Everyone's deadlines in one place — switch to a personal view to see just one person's plate.</p>
+      <h2 class="page-title">My Calendar</h2>
+      <p class="page-sub">Your own deadlines and confirmed schedule in one place.</p>
 
       <div class="row" style="align-items:center; margin-bottom:18px;">
         <div class="col" style="max-width:260px; min-width:180px;">
-          <div class="cal-toggle" id="calToggle">
+          <div class="cal-toggle" id="calToggle" style="display:none;">
             <button class="cal-toggle-btn active" data-mode="team">Team view</button>
             <button class="cal-toggle-btn" data-mode="personal">Personal view</button>
           </div>
         </div>
-        <div class="col" id="calPersonWrap" style="display:none; max-width:260px; min-width:180px;">
+        <div class="col" id="calPersonWrap" style="display:none!important; max-width:260px; min-width:180px;">
           <select id="calPersonSelect"></select>
         </div>
         <div class="col" style="display:flex; justify-content:flex-end; gap:8px; min-width:160px;">
@@ -1170,6 +1171,8 @@ let projects = []; // {id, ownerId, title, dueDate, tasks:[{id,text,done,dueDate
 let projectCounter = 1;
 let taskCounter = 1;
 let statuses = {}; // memberId -> 'free' | 'busy' | 'capacity'
+let schedules = []; // {id,ownerId,title,date,endDate,time,note}
+let scheduleCounter = 1;
 let currentUserId = null; // who is using this device right now
 
 const STATUS_META = {
@@ -2160,11 +2163,12 @@ function renderPriorityList(allItems){
 function renderProjectProgressSection(){
   const projectsWrap = document.getElementById('sectionProjects');
   if(!projectsWrap) return;
-  if(!projects.length){
+  const mine = projects.filter(p=>p.ownerId===currentUserId);
+  if(!mine.length){
     projectsWrap.innerHTML = `<div class="empty-state"><h3>No projects yet</h3><p>Add one using the quick-add card above — you can break it into tasks right after.</p></div>`;
     return;
   }
-  const sorted = projects.slice().sort((a,b)=>{
+  const sorted = mine.slice().sort((a,b)=>{
     const sa = projectStats(a), sb = projectStats(b);
     if(sa.overdue !== sb.overdue) return sa.overdue ? -1 : 1;
     return 0;
@@ -2248,7 +2252,7 @@ function renderBoard(){
   renderCurrentUserLabel();
   renderGreeting();
   renderMyStatusPicker();
-  const allItems = getAllItemsFlat(); // computed once per render, shared below (was recomputed up to 8x)
+  const allItems = getAllItemsFlat().filter(it=>it.ownerId===currentUserId); // personal board only
   renderBentoSummary(allItems);
   renderPriorityList(allItems);
   renderProjectProgressSection();
@@ -2277,7 +2281,7 @@ function renderBoard(){
           <div class="avatar">${initials}</div>
           <div style="flex:1;">
             <div class="member-name">${m.name}${m.id===currentUserId ? ' <span style="color:var(--muted); font-weight:500;">(you)</span>' : ''}</div>
-            <div class="member-load">${memberBriefs.length} brief${memberBriefs.length===1?'':'s'} &middot; ${memberProjects.length} project${memberProjects.length===1?'':'s'}</div>
+            <div class="member-load">${m.office} office · details private</div>
           </div>
           <span class="status-pill ${statusMeta.cls}" style="cursor:default;">${statusMeta.emoji} ${statusMeta.label}</span>
         </div>
@@ -2305,7 +2309,7 @@ function renderBoard(){
 
 function renderActiveBriefList(){
   const wrap = document.getElementById('activeBriefList');
-  const active = briefs.filter(b=>b.status !== 'Approved');
+  const active = briefs.filter(b=>b.status !== 'Approved' && b.assigneeId===currentUserId);
   if(!active.length){
     wrap.innerHTML = `<div class="empty-state"><h3>Nothing in progress</h3><p>Assign a brief from the New Brief tab to see it here.</p></div>`;
     return;
@@ -2390,7 +2394,7 @@ function renderArchive(){
 /* ---------------------------------------------------------
    CALENDAR
 --------------------------------------------------------- */
-let calMode = 'team'; // 'team' | 'personal'
+let calMode = 'personal'; // personal calendar only
 let calPersonId = null;
 let calCursor = new Date(); // month currently displayed
 calCursor.setDate(1);
@@ -2433,81 +2437,63 @@ function populateCalPersonSelect(){
 }
 
 function relevantBriefs(){
-  const active = briefs.filter(b=>b.status !== 'Approved');
-  if(calMode === 'personal'){
-    return active.filter(b=>b.assigneeId === calPersonId);
-  }
-  return active;
+  return briefs.filter(b=>b.status !== 'Approved' && b.assigneeId === currentUserId);
+}
+function getPersonalCalendarEntries(){
+  const entries = [];
+  relevantBriefs().forEach(b=>{
+    if(!b.dueDate) return;
+    entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',status:b.status,effortLevel:b.effortLevel});
+  });
+  schedules.filter(x=>x.ownerId===currentUserId).forEach(x=>{
+    if(!x.date) return;
+    entries.push({id:x.id,kind:'schedule',title:x.title,date:x.date,endDate:x.endDate||x.date,time:x.time||'',note:x.note||''});
+  });
+  return entries;
+}
+function calendarDates(start,end){
+  const out=[];
+  let d=new Date(start+'T00:00:00');
+  const e=new Date((end||start)+'T00:00:00');
+  if(isNaN(d)||isNaN(e)) return out;
+  for(;d<=e;d.setDate(d.getDate()+1)) out.push(d.toISOString().slice(0,10));
+  return out;
 }
 
 function renderCalendar(){
   populateCalPersonSelect();
-  const year = calCursor.getFullYear();
-  const month = calCursor.getMonth();
-  document.getElementById('calMonthLabel').textContent = calCursor.toLocaleDateString('en-GB',{month:'long', year:'numeric'});
-
-  const relevant = relevantBriefs();
-  const byDate = {};
-  relevant.forEach(b=>{
-    if(!b.dueDate) return;
-    (byDate[b.dueDate] = byDate[b.dueDate] || []).push(b);
-  });
-
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{
-    const el = document.createElement('div');
-    el.className = 'cal-dow';
-    el.textContent = d;
-    grid.appendChild(el);
-  });
-
-  const firstDay = new Date(year, month, 1);
-  let startOffset = firstDay.getDay() - 1; // Mon=0
-  if(startOffset < 0) startOffset = 6;
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const todayStr = new Date().toISOString().slice(0,10);
-
-  for(let i=0;i<startOffset;i++){
-    const el = document.createElement('div');
-    el.className = 'cal-cell empty';
-    grid.appendChild(el);
-  }
-  for(let d=1; d<=daysInMonth; d++){
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const items = byDate[dateStr] || [];
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell' + (dateStr===todayStr ? ' today' : '') + (items.length ? ' has-items' : '');
-    cell.innerHTML = `<div class="cal-daynum">${d}</div>` + items.map(b=>`<div class="cal-item" title="${escapeHtml(b.title)}">${escapeHtml(b.title)}</div>`).join('');
+  calPersonId=currentUserId;
+  const year=calCursor.getFullYear(), month=calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent=calCursor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const relevant=getPersonalCalendarEntries();
+  const byDate={};
+  relevant.forEach(item=>calendarDates(item.date,item.endDate).forEach(d=>(byDate[d]=byDate[d]||[]).push(item)));
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});
+  const firstDay=new Date(year,month,1); let startOffset=firstDay.getDay()-1; if(startOffset<0) startOffset=6;
+  const daysInMonth=new Date(year,month+1,0).getDate(); const today=new Date().toISOString().slice(0,10);
+  for(let i=0;i<startOffset;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items=byDate[dateStr]||[]; const cell=document.createElement('div');
+    cell.className='cal-cell'+(dateStr===today?' today':'')+(items.length?' has-items':'');
+    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item" title="${escapeHtml(it.title)}">${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');
     grid.appendChild(cell);
   }
-
   renderAgenda(relevant);
 }
-
 function renderAgenda(relevant){
-  const wrap = document.getElementById('calAgenda');
-  const sorted = relevant.filter(b=>b.dueDate).slice().sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
-  if(!sorted.length){
-    wrap.innerHTML = `<div class="empty-state"><h3>Nothing due</h3><p>${calMode==='personal' ? "This person doesn't have any active briefs right now." : "No active briefs on the books right now."}</p></div>`;
-    return;
-  }
-  wrap.innerHTML = sorted.map(b=>{
-    const member = TEAM.find(m=>m.id===b.assigneeId);
-    const meta = EFFORT_META[b.effortLevel] || EFFORT_META.boleh;
-    return `
-      <div class="agenda-row clickable" data-brief="${b.id}">
-        <div class="agenda-date">${formatDate(b.dueDate)}</div>
-        <div class="agenda-info">
-          <h4>${escapeHtml(b.title)}</h4>
-          <div class="meta">${member ? member.name : 'Unassigned'} &middot; ${meta.emoji} ${meta.label} &middot; ${b.status}</div>
-        </div>
-      </div>
-    `;
+  const wrap=document.getElementById('calAgenda');
+  const sorted=relevant.slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(!sorted.length){wrap.innerHTML=`<div class="empty-state"><h3>Nothing scheduled</h3><p>No active brief deadlines or confirmed schedule entries yet.</p></div>`;return;}
+  wrap.innerHTML=sorted.map(it=>{
+    let meta='';
+    if(it.kind==='brief'){const em=EFFORT_META[it.effortLevel]||EFFORT_META.boleh;meta=`${em.emoji} ${em.label} · ${it.status}`;}
+    else{const range=it.endDate&&it.endDate!==it.date?` → ${formatDate(it.endDate)}`:'';meta=`${it.time?it.time+' · ':''}Schedule${range}${it.note?' · '+escapeHtml(it.note):''}`;}
+    return `<div class="agenda-row ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><div class="agenda-date">${formatDate(it.date)}</div><div class="agenda-info"><h4>${escapeHtml(it.title)}</h4><div class="meta">${meta}</div></div></div>`;
   }).join('');
-  wrap.querySelectorAll('.agenda-row.clickable').forEach(row=>{
-    row.addEventListener('click', ()=> openBriefModal(row.dataset.brief));
-  });
+  wrap.querySelectorAll('.agenda-row.clickable').forEach(row=>row.addEventListener('click',()=>openBriefModal(row.dataset.brief)));
 }
 
 /* ---------------------------------------------------------
@@ -2631,7 +2617,7 @@ const STORAGE_KEY_TASKS = 'brief-bar-tasks-data';
 async function saveTasksToStorage(){
   setSyncStatus('Saving...');
   try{
-    const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses });
+    const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses, schedules, scheduleCounter });
     await kvSet(STORAGE_KEY_TASKS, payload);
     setSyncStatus('Saved ✓');
   }catch(err){
@@ -2649,6 +2635,8 @@ async function loadTasksFromStorage(){
       projectCounter = parsed.projectCounter || 1;
       taskCounter = parsed.taskCounter || 1;
       statuses = parsed.statuses || {};
+      schedules = parsed.schedules || [];
+      scheduleCounter = parsed.scheduleCounter || 1;
     }
   }catch(err){
     // key not found yet is expected on first-ever use
