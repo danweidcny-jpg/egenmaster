@@ -1,0 +1,252 @@
+name: Personalize board and calendar
+
+on:
+  push:
+    paths:
+      - '.github/workflows/personalize-board-calendar.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Patch personal board and calendar
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          files = [Path('index.html'), Path('egen-master-deck.html')]
+
+          calendar_block = r'''function relevantCalendarItems(){
+  const items = [];
+
+  briefs.filter(b=>b.status !== 'Approved').forEach(b=>{
+    if(!b.dueDate) return;
+    items.push({
+      id:b.id, kind:'brief', ownerId:b.assigneeId,
+      title:b.title, date:b.dueDate, time:'',
+      meta:'Proposal / Quotation · ' + b.status,
+      briefId:b.id
+    });
+  });
+
+  projects.forEach(p=>{
+    if(p.dueDate){
+      items.push({
+        id:'project-'+p.id, kind:'project', ownerId:p.ownerId,
+        title:p.title, date:p.dueDate, time:'',
+        meta:'Project / Event date'
+      });
+    }
+    (p.tasks||[]).forEach(t=>{
+      if(!t.dueDate || t.done) return;
+      items.push({
+        id:t.id, kind:'task', ownerId:p.ownerId,
+        title:t.text, date:t.dueDate, time:t.time || '',
+        meta:p.title + (t.waiting ? ' · Waiting' : '')
+      });
+    });
+  });
+
+  scheduleEvents.forEach(ev=>{
+    if(!ev.date) return;
+    items.push({
+      id:ev.id, kind:'schedule', ownerId:ev.ownerId,
+      title:ev.title, date:ev.date, endDate:ev.endDate || '', time:ev.time || '',
+      meta:ev.note || 'Schedule'
+    });
+  });
+
+  if(calMode === 'personal') return items.filter(x=>x.ownerId === calPersonId);
+  return items;
+}
+
+function eachDateInRange(start, end){
+  const out = [];
+  const last = end || start;
+  let d = new Date(start + 'T00:00:00');
+  const e = new Date(last + 'T00:00:00');
+  if(isNaN(d) || isNaN(e)) return start ? [start] : [];
+  while(d <= e){
+    out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+function renderCalendar(){
+  populateCalPersonSelect();
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent = calCursor.toLocaleDateString('en-GB',{month:'long', year:'numeric'});
+
+  const relevant = relevantCalendarItems();
+  const byDate = {};
+  relevant.forEach(item=>{
+    const dates = item.kind === 'schedule' ? eachDateInRange(item.date, item.endDate) : [item.date];
+    dates.forEach(date=> (byDate[date] = byDate[date] || []).push(item));
+  });
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date().toISOString().slice(0,10);
+
+  for(let i=0;i<startOffset;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayItems = (byDate[dateStr] || []).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' + (dateStr===today ? ' today' : '') + (dayItems.length ? ' has-items' : '');
+    cell.innerHTML = `<div class="cal-daynum">${d}</div>` + dayItems.map(item=>{
+      const prefix = item.time ? item.time + ' · ' : '';
+      return `<div class="cal-item ${item.kind==='brief'?'clickable':''}" ${item.briefId ? `data-brief="${item.briefId}"` : ''} title="${escapeHtml(prefix + item.title)}">${escapeHtml(prefix + item.title)}</div>`;
+    }).join('');
+    grid.appendChild(cell);
+  }
+
+  grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>{
+    el.addEventListener('click', ()=>openBriefModal(el.dataset.brief));
+  });
+  renderAgenda(relevant);
+}
+
+function renderAgenda(relevant){
+  const wrap = document.getElementById('calAgenda');
+  const sorted = relevant.slice().sort((a,b)=>{
+    const dateCmp = (a.date||'').localeCompare(b.date||'');
+    if(dateCmp) return dateCmp;
+    return (a.time||'99:99').localeCompare(b.time||'99:99');
+  });
+  if(!sorted.length){
+    wrap.innerHTML = `<div class="empty-state"><h3>Nothing scheduled</h3><p>${calMode==='personal' ? "No tasks, project dates, proposals, or schedule items for this person." : "No team deadlines or schedule items right now."}</p></div>`;
+    return;
+  }
+  wrap.innerHTML = sorted.map(item=>{
+    const owner = TEAM.find(m=>m.id===item.ownerId);
+    const endText = item.endDate && item.endDate !== item.date ? ` – ${formatDate(item.endDate)}` : '';
+    const timeText = item.time ? ` · ${item.time}` : '';
+    const icon = item.kind==='schedule' ? '📍' : item.kind==='task' ? '☑️' : item.kind==='project' ? '🗂️' : '📄';
+    return `
+      <div class="agenda-row ${item.briefId?'clickable':''}" ${item.briefId ? `data-brief="${item.briefId}"` : ''}>
+        <div class="agenda-date">${formatDate(item.date)}${endText}${timeText}</div>
+        <div class="agenda-info">
+          <h4>${icon} ${escapeHtml(item.title)}</h4>
+          <div class="meta">${owner ? owner.name : 'Unassigned'} &middot; ${escapeHtml(item.meta || item.kind)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  wrap.querySelectorAll('.agenda-row[data-brief]').forEach(row=>{
+    row.addEventListener('click', ()=> openBriefModal(row.dataset.brief));
+  });
+}
+
+/* ---------------------------------------------------------
+   BRIEF DETAIL MODAL'''
+
+          for path in files:
+              text = path.read_text()
+
+              # Schedule state.
+              old = "let currentUserId = null; // who is using this device right now"
+              new = old + "\nlet scheduleEvents = []; // {id,ownerId,title,date,endDate,time,note}\nlet scheduleCounter = 1;"
+              if old not in text:
+                  raise SystemExit(f'{path}: current user state anchor missing')
+              text = text.replace(old, new, 1)
+
+              # Personal board priority only.
+              old = "const allItems = getAllItemsFlat(); // computed once per render, shared below (was recomputed up to 8x)"
+              new = "const allItems = getAllItemsFlat().filter(item=>item.ownerId===currentUserId); // personal dashboard: only this user's items"
+              if old not in text:
+                  raise SystemExit(f'{path}: board allItems anchor missing')
+              text = text.replace(old, new, 1)
+
+              # Personal project progress only.
+              old = """  if(!projects.length){
+    projectsWrap.innerHTML = `<div class=\"empty-state\"><h3>No projects yet</h3><p>Add one using the quick-add card above — you can break it into tasks right after.</p></div>`;
+    return;
+  }
+  const sorted = projects.slice().sort((a,b)=>{"""
+              new = """  const visibleProjects = projects.filter(p=>p.ownerId===currentUserId);
+  if(!visibleProjects.length){
+    projectsWrap.innerHTML = `<div class=\"empty-state\"><h3>No projects yet</h3><p>Add one using the quick-add card above — you can break it into tasks right after.</p></div>`;
+    return;
+  }
+  const sorted = visibleProjects.slice().sort((a,b)=>{"""
+              if old not in text:
+                  raise SystemExit(f'{path}: project progress anchor missing')
+              text = text.replace(old, new, 1)
+
+              # Hide team overview / other people's briefs from homepage UI.
+              old = '      <div class="eyebrow" style="margin-top:38px;">Team</div>'
+              new = '      <div id="teamOverviewSection" style="display:none;">\n' + old
+              if old not in text:
+                  raise SystemExit(f'{path}: team section start missing')
+              text = text.replace(old, new, 1)
+              old = '        <div id="activeBriefList"></div>\n      </div>\n    </section>'
+              new = '        <div id="activeBriefList"></div>\n      </div>\n      </div>\n    </section>'
+              if old not in text:
+                  raise SystemExit(f'{path}: team section end missing')
+              text = text.replace(old, new, 1)
+
+              # Calendar person defaults to current user.
+              old = "if(!calPersonId) calPersonId = TEAM[0].id;"
+              new = "if(!calPersonId) calPersonId = currentUserId || TEAM[0].id;"
+              if old not in text:
+                  raise SystemExit(f'{path}: calendar person anchor missing')
+              text = text.replace(old, new, 1)
+
+              # Replace brief-only calendar with combined task/project/schedule calendar.
+              pattern = r"function relevantBriefs\(\)\{.*?/\* ---------------------------------------------------------\n   BRIEF DETAIL MODAL"
+              text, n = re.subn(pattern, calendar_block, text, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit(f'{path}: calendar block replacement count={n}')
+
+              # Persist schedule data together with task/project data.
+              old = "const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses });"
+              new = "const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses, scheduleEvents, scheduleCounter });"
+              if old not in text:
+                  raise SystemExit(f'{path}: task save payload anchor missing')
+              text = text.replace(old, new, 1)
+
+              old = """      taskCounter = parsed.taskCounter || 1;
+      statuses = parsed.statuses || {};"""
+              new = """      taskCounter = parsed.taskCounter || 1;
+      statuses = parsed.statuses || {};
+      scheduleEvents = parsed.scheduleEvents || [];
+      scheduleCounter = parsed.scheduleCounter || 1;"""
+              if old not in text:
+                  raise SystemExit(f'{path}: task load anchor missing')
+              text = text.replace(old, new, 1)
+
+              path.write_text(text)
+              print('Patched', path)
+          PY
+      - name: Commit personal dashboard and calendar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Personalize board and expand calendar"
+          git push origin main
