@@ -1,0 +1,139 @@
+name: Final leadership dashboard
+
+on:
+  push:
+    paths:
+      - '.github/workflows/final-leadership-dashboard.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply final board and calendar changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          files=[Path('index.html'),Path('egen-master-deck.html')]
+
+          css='''
+  #leadershipOverview{margin-top:38px;}
+  .leader-card{background:var(--glass);border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-md);margin-bottom:10px;overflow:hidden;box-shadow:0 8px 28px rgba(30,40,35,.04);}
+  .leader-card summary{list-style:none;cursor:pointer;padding:15px 17px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .leader-card summary::-webkit-details-marker{display:none;}
+  .leader-left{display:flex;align-items:center;gap:11px;min-width:0;}
+  .leader-avatar{width:36px;height:36px;border-radius:50%;background:#DDEFF2;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:0 0 auto;}
+  .leader-name{font-weight:750;font-size:14px;}
+  .leader-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .leader-counts{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+  .leader-pill{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:rgba(23,26,24,.06);color:var(--muted);white-space:nowrap;}
+  .leader-pill.waiting{background:var(--pastel-yellow);color:#8A5B00;}
+  .leader-body{padding:0 17px 16px;border-top:1px solid var(--line);}
+  .leader-project{padding:12px 0;border-bottom:1px solid var(--line);}
+  .leader-project:last-child{border-bottom:none;}
+  .leader-project-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;}
+  .leader-project-title{font-weight:700;font-size:13px;}
+  .leader-project-date{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .leader-task-list{list-style:none;padding:0;margin:0;}
+  .leader-task-list li{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12.5px;}
+  .leader-task-list input{width:14px;height:14px;margin-top:2px;pointer-events:none;accent-color:var(--teal);}
+  .leader-task-text.done{text-decoration:line-through;color:var(--muted);}
+  .leader-task-note{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+'''
+
+          leader_js='''
+function isLeadershipUser(){ return ['m1','m5','m6'].includes(currentUserId); }
+function roleFor(id){ if(id==='m1'||id==='m5') return 'Manager'; if(id==='m6') return 'Senior'; return 'Team'; }
+function renderLeadershipOverview(){
+  const wrap=document.getElementById('leadershipOverview');
+  if(!wrap) return;
+  if(!isLeadershipUser()){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  wrap.style.display='block';
+  wrap.innerHTML=`<div class="eyebrow">Management view</div><h2 class="page-title">Team workload</h2><p class="page-sub">Manager / Senior only — click a person to see their projects and tasks.</p>` + TEAM.map(m=>{
+    const ps=projects.filter(p=>p.ownerId===m.id);
+    const allTasks=ps.flatMap(p=>(p.tasks||[]).map(t=>({p,t})));
+    const open=allTasks.filter(x=>!x.t.done);
+    const waiting=open.filter(x=>x.t.waiting).length;
+    const activeBriefs=briefs.filter(b=>b.assigneeId===m.id&&b.status!=='Approved');
+    const initials=m.name.split(' ').map(x=>x[0]).slice(0,2).join('');
+    const st=STATUS_META[statuses[m.id]||'free']||STATUS_META.free;
+    const projectHtml=ps.length?ps.map(p=>`<div class="leader-project"><div class="leader-project-head"><div class="leader-project-title">${escapeHtml(p.title)}</div><div class="leader-project-date">${p.dueDate?formatDate(p.dueDate):''}</div></div>${(p.tasks||[]).length?`<ul class="leader-task-list">${p.tasks.map(t=>`<li><input type="checkbox" ${t.done?'checked':''}><span class="leader-task-text ${t.done?'done':''}">${escapeHtml(t.text)}</span>${t.waiting?'<span class="waiting-tag">Waiting</span>':''}${t.dueDate?`<span class="leader-task-note">${formatDate(t.dueDate)}</span>`:''}</li>`).join('')}</ul>`:'<div class="leader-meta">No tasks yet</div>'}</div>`).join(''):'<div class="leader-project"><div class="leader-meta">No active projects</div></div>';
+    const briefsHtml=activeBriefs.length?`<div class="leader-project"><div class="leader-project-title">Active proposals / briefs</div><ul class="leader-task-list">${activeBriefs.map(b=>`<li><span>📄</span><span>${escapeHtml(b.title)}</span>${b.dueDate?`<span class="leader-task-note">${formatDate(b.dueDate)}</span>`:''}</li>`).join('')}</ul></div>`:'';
+    return `<details class="leader-card"><summary><div class="leader-left"><div class="leader-avatar">${initials}</div><div><div class="leader-name">${escapeHtml(m.name)}</div><div class="leader-meta">${m.office} · ${roleFor(m.id)} · ${st.emoji} ${st.label}</div></div></div><div class="leader-counts"><span class="leader-pill">${ps.length} projects</span><span class="leader-pill">${open.length} open</span>${waiting?`<span class="leader-pill waiting">${waiting} waiting</span>`:''}</div></summary><div class="leader-body">${projectHtml}${briefsHtml}</div></details>`;
+  }).join('');
+}
+'''
+
+          cal='''function relevantBriefs(){ return briefs.filter(b=>b.status!=='Approved'&&b.assigneeId===currentUserId); }
+function calendarDates(start,end){ const out=[];let d=new Date(start+'T00:00:00'),e=new Date((end||start)+'T00:00:00');if(isNaN(d)||isNaN(e))return out;for(;d<=e;d.setDate(d.getDate()+1))out.push(d.toISOString().slice(0,10));return out; }
+function getPersonalCalendarEntries(){
+  const entries=[];
+  const mine=projects.filter(p=>p.ownerId===currentUserId);
+  const ownSchedules=schedules.filter(s=>s.ownerId===currentUserId);
+  relevantBriefs().forEach(b=>{if(b.dueDate)entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',note:'Proposal due date'});});
+  mine.forEach(p=>{
+    if(p.dueDate)entries.push({id:'p-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal/i.test(p.title)?'Proposal due date':'Project / event date'});
+    (p.tasks||[]).forEach(t=>{if(t.dueDate&&!t.done)entries.push({id:t.id,kind:'task',title:t.text,date:t.dueDate,endDate:t.dueDate,time:t.time||'',note:p.title+(t.waiting?' · Waiting':'')});});
+  });
+  ownSchedules.forEach(s=>{if(s.date)entries.push({id:s.id,kind:'schedule',title:s.title,date:s.date,endDate:s.endDate||s.date,time:s.time||'',note:s.note||'Schedule'});});
+  return entries;
+}
+function renderCalendar(){
+  calPersonId=currentUserId;
+  const year=calCursor.getFullYear(),month=calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent=calCursor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const relevant=getPersonalCalendarEntries(),byDate={};
+  relevant.forEach(it=>calendarDates(it.date,it.endDate).forEach(d=>(byDate[d]=byDate[d]||[]).push(it)));
+  const grid=document.getElementById('calGrid');grid.innerHTML='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});
+  let offset=new Date(year,month,1).getDay()-1;if(offset<0)offset=6;const days=new Date(year,month+1,0).getDate(),today=todayStr();
+  for(let i=0;i<offset;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+  for(let d=1;d<=days;d++){const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,items=(byDate[ds]||[]).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));const cell=document.createElement('div');cell.className='cal-cell'+(ds===today?' today':'')+(items.length?' has-items':'');cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}>${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');grid.appendChild(cell);}
+  grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
+  renderAgenda(relevant);
+}
+function renderAgenda(relevant){
+  const wrap=document.getElementById('calAgenda'),sorted=relevant.slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(!sorted.length){wrap.innerHTML='<div class="empty-state"><h3>Nothing scheduled</h3><p>No schedule, task due date, project date, or proposal deadline yet.</p></div>';return;}
+  wrap.innerHTML=sorted.map(it=>{const icon=it.kind==='brief'?'📄':it.kind==='task'?'☑️':it.kind==='project'?'🗂️':'📍',range=it.endDate&&it.endDate!==it.date?` → ${formatDate(it.endDate)}`:'';return `<div class="agenda-row ${it.kind==='brief'?'clickable':''}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><div class="agenda-date">${formatDate(it.date)}</div><div class="agenda-info"><h4>${icon} ${escapeHtml(it.title)}</h4><div class="meta">${it.time?it.time+' · ':''}${escapeHtml(it.note||'')}${range}</div></div></div>`;}).join('');
+  wrap.querySelectorAll('.agenda-row.clickable').forEach(r=>r.addEventListener('click',()=>openBriefModal(r.dataset.brief)));
+}
+
+/* ---------------------------------------------------------
+   BRIEF DETAIL MODAL'''
+
+          for path in files:
+              text=path.read_text()
+              if '#leadershipOverview{margin-top:38px;}' not in text:text=text.replace('</style>',css+'\n</style>',1)
+              if 'id="leadershipOverview"' not in text:
+                  anchor='''      <div class="section-block">\n        <h3>Project progress</h3>\n        <div id="sectionProjects"></div>\n      </div>'''
+                  if anchor not in text: raise SystemExit(f'{path}: leadership HTML anchor missing')
+                  text=text.replace(anchor,anchor+'\n\n      <div id="leadershipOverview" style="display:none;"></div>',1)
+              text=text.replace('<div id="teamGrid"></div>','<div id="teamGrid" style="display:none!important;"></div>',1)
+              text=text.replace('<div class="brief-list">','<div class="brief-list" style="display:none!important;">',1)
+              text=re.sub(r'''function getTodayItems\(allItems\)\{.*?\n\}''','''function getTodayItems(allItems){\n  const items=allItems||getAllItemsFlat(),today=todayStr();\n  return items.filter(t=>!t.done&&((t.type==='task'&&(!t.dueDate||t.dueDate===today))||(t.type!=='task'&&t.dueDate===today)));\n}''',text,count=1,flags=re.S)
+              if 'function renderLeadershipOverview()' not in text:
+                  marker='/* ---------------------------------------------------------\n   CELEBRATION ANIMATION'
+                  if marker not in text: raise SystemExit(f'{path}: celebration anchor missing')
+                  text=text.replace(marker,leader_js+'\n'+marker,1)
+              if 'renderLeadershipOverview();' not in text:
+                  text=text.replace('  renderProjectProgressSection();','  renderProjectProgressSection();\n  renderLeadershipOverview();',1)
+              pattern=r'''function relevantBriefs\(\)\{.*?/\* ---------------------------------------------------------\n   BRIEF DETAIL MODAL'''
+              text,n=re.subn(pattern,cal,text,count=1,flags=re.S)
+              if n!=1: raise SystemExit(f'{path}: calendar replace failed {n}')
+              path.write_text(text)
+          PY
+      - name: Commit final changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html egen-master-deck.html
+          git commit -m "Finalize leadership workload Today and calendar"
+          git push origin main
