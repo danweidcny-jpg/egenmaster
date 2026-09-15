@@ -2539,6 +2539,26 @@ function calendarDates(start,end){
   for(;d<=e;d.setDate(d.getDate()+1)) out.push(d.toISOString().slice(0,10));
   return out;
 }
+function getPersonalCalendarEntries(){
+  const entries = [];
+  relevantBriefs().forEach(b=>{
+    if(!b.dueDate) return;
+    entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',status:b.status,effortLevel:b.effortLevel});
+  });
+  schedules.filter(x=>x.ownerId===currentUserId).forEach(x=>{
+    if(!x.date) return;
+    entries.push({id:x.id,kind:'schedule',title:x.title,date:x.date,endDate:x.endDate||x.date,time:x.time||'',note:x.note||''});
+  });
+  return entries;
+}
+function calendarDates(start,end){
+  const out=[];
+  let d=new Date(start+'T00:00:00');
+  const e=new Date((end||start)+'T00:00:00');
+  if(isNaN(d)||isNaN(e)) return out;
+  for(;d<=e;d.setDate(d.getDate()+1)) out.push(d.toISOString().slice(0,10));
+  return out;
+}
 
 function renderCalendar(){
   populateCalPersonSelect();
@@ -2715,6 +2735,8 @@ async function loadTasksFromStorage(){
       projectCounter = parsed.projectCounter || 1;
       taskCounter = parsed.taskCounter || 1;
       statuses = parsed.statuses || {};
+      schedules = parsed.schedules || [];
+      scheduleCounter = parsed.scheduleCounter || 1;
       schedules = parsed.schedules || [];
       scheduleCounter = parsed.scheduleCounter || 1;
       schedules = parsed.schedules || [];
