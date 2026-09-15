@@ -1136,8 +1136,8 @@
     <!-- ===================== CALENDAR VIEW ===================== -->
     <section class="view" id="view-calendar">
       <div class="eyebrow">Due dates</div>
-      <h2 class="page-title">My Calendar</h2>
-      <p class="page-sub">Project event dates and proposal / quotation due dates only.</p>
+      <h2 class="page-title" id="calendarTitle">My Calendar</h2>
+      <p class="page-sub" id="calendarSubtitle">Project event dates and proposal / quotation due dates only.</p>
 
       <div class="row" style="align-items:center; margin-bottom:18px;">
         <div class="col" style="max-width:260px; min-width:180px;">
@@ -2653,13 +2653,40 @@ function calendarDates(start,end){
   for(;d<=e;d.setDate(d.getDate()+1)) out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
   return out;
 }
+function calendarScopeOwnerIds(){
+  if(currentUserId==='m1' || currentUserId==='m5') return TEAM.map(m=>m.id); // Danwei: JB + KL
+  if(currentUserId==='m6') return TEAM.filter(m=>m.office==='KL').map(m=>m.id); // Chen: KL only
+  return [currentUserId];
+}
+function calendarScopeLabel(){
+  if(currentUserId==='m1' || currentUserId==='m5') return {title:'JB + KL Team Calendar', sub:'All JB & KL project event dates and New Brief proposal / quotation due dates.'};
+  if(currentUserId==='m6') return {title:'KL Team Calendar', sub:'KL team project event dates and New Brief proposal / quotation due dates.'};
+  return {title:'My Calendar', sub:'Project event dates and proposal / quotation due dates only.'};
+}
 function getPersonalCalendarEntries(){
   const entries=[];
-  relevantBriefs().forEach(b=>{
-    if(b.dueDate) entries.push({id:b.id,kind:'brief',title:b.title,date:b.dueDate,endDate:b.dueDate,time:'',note:'Proposal / quotation due date'});
+  const ownerIds=calendarScopeOwnerIds();
+  const multi=ownerIds.length>1;
+  const ownerName=id=>{ const m=TEAM.find(x=>x.id===id); return m?m.name:'Unassigned'; };
+
+  briefs.filter(b=>b.status!=='Approved' && ownerIds.includes(b.assigneeId)).forEach(b=>{
+    if(!b.dueDate) return;
+    entries.push({
+      id:b.id, kind:'brief', ownerId:b.assigneeId,
+      title: multi ? `${ownerName(b.assigneeId)} · ${b.title}` : b.title,
+      date:b.dueDate, endDate:b.dueDate, time:'',
+      note:'Proposal / quotation due date'
+    });
   });
-  projects.filter(p=>p.ownerId===currentUserId).forEach(p=>{
-    if(p.dueDate) entries.push({id:'project-'+p.id,kind:'project',title:p.title,date:p.dueDate,endDate:p.dueDate,time:'',note:/proposal|quotation/i.test(p.title)?'Proposal / quotation due date':'Project event date'});
+
+  projects.filter(p=>ownerIds.includes(p.ownerId)).forEach(p=>{
+    if(!p.dueDate) return;
+    entries.push({
+      id:'project-'+p.id, kind:'project', ownerId:p.ownerId,
+      title: multi ? `${ownerName(p.ownerId)} · ${p.title}` : p.title,
+      date:p.dueDate, endDate:p.dueDate, time:'',
+      note:/proposal|quotation/i.test(p.title)?'Proposal / quotation due date':'Project event date'
+    });
   });
   return entries;
 }
@@ -2682,6 +2709,11 @@ function moveCalendarEntryToDate(kind, id, newDate){
   renderCalendar();
 }
 function renderCalendar(){
+  const scope=calendarScopeLabel();
+  const titleEl=document.getElementById('calendarTitle');
+  const subEl=document.getElementById('calendarSubtitle');
+  if(titleEl) titleEl.textContent=scope.title;
+  if(subEl) subEl.textContent=scope.sub;
   calPersonId=currentUserId;
   const year=calCursor.getFullYear(),month=calCursor.getMonth();
   document.getElementById('calMonthLabel').textContent=calCursor.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
