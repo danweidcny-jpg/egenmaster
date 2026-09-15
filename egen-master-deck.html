@@ -1078,6 +1078,22 @@
       </div>
 
 
+
+      <div class="section-block" id="dailyWorkloadSection">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+          <div>
+            <h3 style="margin-bottom:2px;">Daily workload</h3>
+            <div style="font-size:12px;color:var(--muted);">Check your task quantity, then update Free / Busy / At Capacity above.</div>
+          </div>
+        </div>
+        <div class="priority-tabs" id="priorityTabs">
+          <button type="button" class="priority-tab active" data-tab="today">Today <span class="tab-count" id="countToday">0</span></button>
+          <button type="button" class="priority-tab" data-tab="upcoming">Upcoming <span class="tab-count" id="countUpcoming">0</span></button>
+          <button type="button" class="priority-tab" data-tab="waiting">Pending <span class="tab-count" id="countWaiting">0</span></button>
+        </div>
+        <div id="priorityList"></div>
+      </div>
+
       <div class="section-block">
         <h3>Project progress</h3>
         <div id="sectionProjects"></div>
@@ -2171,22 +2187,33 @@ const PRIORITY_EMPTY_STATES = {
 function renderPriorityList(allItems){
   const wrap = document.getElementById('priorityList');
   if(!wrap) return;
-  const items = allItems || getAllItemsFlat();
+  const today = todayStr();
+  const tasks = (allItems || getAllItemsFlat())
+    .filter(it=>it.type==='task' && !it.done && it.ownerId===currentUserId);
+
   const dataMap = {
-    today: getTodayItems(items),
-    overdue: getOverdueItems(items),
-    waiting: getWaitingItems(items),
-    upcoming: getUpcomingItems(items),
+    today: tasks.filter(it=>!it.waiting && (!it.dueDate || it.dueDate<=today)),
+    upcoming: tasks.filter(it=>!it.waiting && it.dueDate && it.dueDate>today),
+    waiting: tasks.filter(it=>it.waiting),
   };
+
+  if(!['today','upcoming','waiting'].includes(activePriorityTab)) activePriorityTab='today';
   const rows = dataMap[activePriorityTab] || [];
-  const [emptyTitle, emptyBody] = PRIORITY_EMPTY_STATES[activePriorityTab] || PRIORITY_EMPTY_STATES.today;
+  const emptyMap = {
+    today:['Nothing on Today','No active tasks for today.'],
+    upcoming:['Nothing upcoming','No future task deadlines yet.'],
+    waiting:['Nothing pending','No tasks are waiting on client / supplier right now.'],
+  };
+  const [emptyTitle, emptyBody] = emptyMap[activePriorityTab];
+
   wrap.innerHTML = rows.length
     ? rows.map(it=>buildFlatRowHtml(it, activePriorityTab)).join('')
-    : `<div class="empty-state"><h3>${emptyTitle}</h3><p>${emptyBody}</p></div>`;
+    : `<div class="empty-state" style="padding:28px 20px;"><h3>${emptyTitle}</h3><p>${emptyBody}</p></div>`;
 
-  ['today','overdue','waiting','upcoming'].forEach(key=>{
-    const countEl = document.getElementById('count' + key.charAt(0).toUpperCase() + key.slice(1));
-    if(countEl) countEl.textContent = dataMap[key].length;
+  const counts = {Today:dataMap.today.length, Upcoming:dataMap.upcoming.length, Waiting:dataMap.waiting.length};
+  Object.entries(counts).forEach(([key,val])=>{
+    const el=document.getElementById('count'+key);
+    if(el) el.textContent=val;
   });
 }
 
