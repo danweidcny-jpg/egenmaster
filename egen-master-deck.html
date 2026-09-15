@@ -757,6 +757,10 @@
     font-weight:600; font-size:13.5px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
+  .flat-row.done .flat-row-title{
+    color:var(--muted);
+    text-decoration:line-through;
+  }
   .flat-row-meta{
     font-size:11.5px; color:var(--muted); margin-top:3px;
     display:flex; align-items:center; gap:7px; flex-wrap:wrap;
@@ -1925,7 +1929,7 @@ function buildProjectCardHtml(project, editable){
   const tasksHtml = project.tasks.map(t=>{
     const isOverdue = !t.done && t.dueDate && t.dueDate < todayStr();
     return `<li class="${t.done?'done':''}">
-      ${editable ? `<input type="checkbox" ${t.done?'checked':''} data-task-toggle="${t.id}">` : `<span class="status-dot ${t.done?'status-free':'status-busy'}"></span>`}
+      <input type="checkbox" ${t.done?'checked':''} data-task-toggle="${t.id}" aria-label="Mark task complete">
       <span class="task-text">${escapeHtml(t.text)}</span>
       ${t.waiting ? '<span class="waiting-tag">Waiting</span>' : ''}
       ${t.dueDate ? `<span class="task-due ${isOverdue?'overdue':''}">${isOverdue?'Overdue · ':''}${formatDate(t.dueDate)}</span>` : ''}
@@ -2075,9 +2079,9 @@ function buildFlatRowHtml(item, tab){
     ? `<button class="task-waiting-btn ${item.waiting?'active':''}" data-task-waiting="${item.id}" title="Waiting on client / supplier">⏳</button>`
     : '';
 
-  return `<div class="flat-row ${isProposal?'clickable':''}" ${isProposal ? `data-brief="${item.id}"` : ''}>
+  return `<div class="flat-row ${isProposal?'clickable':''} ${item.done?'done':''}" ${isProposal ? `data-brief="${item.id}"` : ''}>
     <div class="flat-row-main">
-      ${editable ? `<input type="checkbox" data-task-toggle="${item.id}">` : `<span class="flat-row-icon">${rowIcon}</span>`}
+      ${item.type === 'task' ? `<input type="checkbox" ${item.done?'checked':''} data-task-toggle="${item.id}" aria-label="Mark task complete">` : `<span class="flat-row-icon">${rowIcon}</span>`}
       <div class="flat-row-text">
         <div class="flat-row-title">${escapeHtml(item.text)}</div>
         <div class="flat-row-meta"><span>${metaText}</span>${tagsHtml}</div>
