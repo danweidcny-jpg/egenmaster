@@ -1,0 +1,208 @@
+name: Repair 15 Sep daily update
+
+on:
+  push:
+    paths:
+      - '.github/workflows/repair-daily-update-2026-09-15.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repair live task data idempotently
+        env:
+          API_URL: https://egen-master-deck-api.danwei.workers.dev/api/storage
+        run: |
+          python - <<'PY'
+          import json, os, re, urllib.parse, urllib.request
+
+          API = os.environ['API_URL']
+          KEY = 'brief-bar-tasks-data'
+          CREATED = '2026-09-15'
+
+          def norm(s):
+              return re.sub(r'[^a-z0-9]+', ' ', (s or '').lower()).strip()
+
+          def get_live():
+              url = API + '?' + urllib.parse.urlencode({'key': KEY})
+              with urllib.request.urlopen(url, timeout=30) as r:
+                  outer = json.loads(r.read().decode())
+              raw = outer.get('value')
+              return json.loads(raw) if raw else {'projects':[], 'projectCounter':1, 'taskCounter':1, 'statuses':{}}
+
+          data = get_live()
+          projects = data.setdefault('projects', [])
+          statuses = data.setdefault('statuses', {})
+
+          def next_id(prefix):
+              vals = []
+              for p in projects:
+                  if prefix == 'p':
+                      m = re.fullmatch(r'p(\d+)', str(p.get('id','')))
+                      if m: vals.append(int(m.group(1)))
+                  else:
+                      for t in p.get('tasks', []):
+                          m = re.fullmatch(r't(\d+)', str(t.get('id','')))
+                          if m: vals.append(int(m.group(1)))
+              return prefix + str((max(vals) if vals else 0) + 1)
+
+          def find_projects(owner, contains):
+              needle = norm(contains)
+              return [p for p in projects if p.get('ownerId') == owner and needle in norm(p.get('title',''))]
+
+          def ensure_project(owner, title, due='', contains=None):
+              matches = find_projects(owner, contains or title)
+              if matches:
+                  p = matches[0]
+                  # merge accidental duplicates for same owner/project
+                  for dup in matches[1:]:
+                      for t in dup.get('tasks', []):
+                          if not any(norm(x.get('text')) == norm(t.get('text')) for x in p.get('tasks', [])):
+                              p.setdefault('tasks', []).append(t)
+                      projects.remove(dup)
+              else:
+                  p = {'id': next_id('p'), 'ownerId': owner, 'title': title, 'dueDate': due, 'tasks': [], 'createdAt': CREATED}
+                  projects.append(p)
+              p['ownerId'] = owner
+              p['title'] = title
+              p['dueDate'] = due
+              p.setdefault('tasks', [])
+              p.setdefault('createdAt', CREATED)
+              return p
+
+          def ensure_task(p, text, due='', waiting=False):
+              target = norm(text)
+              task = next((t for t in p['tasks'] if norm(t.get('text')) == target), None)
+              if task is None:
+                  task = {'id': next_id('t'), 'text': text, 'done': False, 'waiting': waiting, 'dueDate': due}
+                  p['tasks'].append(task)
+              else:
+                  task['text'] = text
+                  task.setdefault('done', False)
+                  task['waiting'] = waiting
+                  task['dueDate'] = due
+              return task
+
+          # Fix any misassigned Impian Night Run under Eunice by moving/merging it to Xinyee.
+          x_imp = find_projects('m2', 'impian night run')
+          e_imp = find_projects('m3', 'impian night run')
+          if x_imp:
+              imp = x_imp[0]
+              for ep in e_imp:
+                  for t in ep.get('tasks', []):
+                      if not any(norm(x.get('text')) == norm(t.get('text')) for x in imp.get('tasks', [])):
+                          imp.setdefault('tasks', []).append(t)
+                  projects.remove(ep)
+          elif e_imp:
+              imp = e_imp[0]
+              imp['ownerId'] = 'm2'
+              for ep in e_imp[1:]:
+                  for t in ep.get('tasks', []):
+                      if not any(norm(x.get('text')) == norm(t.get('text')) for x in imp.get('tasks', [])):
+                          imp.setdefault('tasks', []).append(t)
+                  projects.remove(ep)
+
+          # Xinyee
+          p = ensure_project('m2', 'PRO3C (15/10)', '2026-10-15', 'pro3c')
+          for text, due in [
+              ('Double check master list',''),
+              ('Follow up door gift status',''),
+              ('Follow up on design and client approval deck',''),
+              ('Follow up media invitation letter from client',''),
+              ('Follow up beach flag status',''),
+              ('PRO3C Grand Opening','2026-10-15'),
+          ]: ensure_task(p, text, due, False)
+
+          p = ensure_project('m2', 'Impian Night Run (05/12)', '2026-12-05', 'impian night run')
+          for text, due in [
+              ('Track participants every Monday & Thursday',''),
+              ('Follow up inflatable arch design direction',''),
+              ('Follow up live band selection',''),
+              ('Check social media visual and update Shimin',''),
+              ('Arrange documents for license application',''),
+              ('Follow up with MSNJ',''),
+              ('Arrange & purchase Taobao items',''),
+              ('Cut off shirt quantity (1st batch)','2026-09-15'),
+              ('Install banner at school in November',''),
+              ('Pass Impian Run bunting to office and school','2026-09-15'),
+              ('Impian Run Roadshow (19-20/09)','2026-09-19'),
+          ]: ensure_task(p, text, due, False)
+
+          p = ensure_project('m2', 'WASB Annual Dinner Proposal', '2026-09-15', 'wasb annual dinner')
+          ensure_task(p, 'Prepare / complete WASB Annual Dinner proposal', '2026-09-15', False)
+
+          p = ensure_project('m2', 'Tianje Booth Dismantle', '2026-09-24', 'tianje')
+          ensure_task(p, 'Tianje booth dismantle', '2026-09-24', False)
+
+          # Eunice
+          p = ensure_project('m3', 'Temokin VP Event (10-11/10)', '2026-10-10', 'temokin vp event')
+          for text in [
+              'Follow up gimmick box production',
+              'Revise design approval to latest date',
+              'Arrange Viral Platform 1st draft preview',
+              'Arrange media form',
+              'Arrange emcee brief',
+              'Arrange console brief',
+              'Arrange action plan',
+          ]: ensure_task(p, text, '', False)
+
+          p = ensure_project('m3', 'BDC D&D', '', 'bdc d d')
+          for text in ['Arrange timeline','Follow up packaging rate','Arrange slides design']:
+              ensure_task(p, text, '', False)
+
+          p = ensure_project('m3', 'Gaya Centre Xmas Deco', '', 'gaya centre xmas deco')
+          for text in ['Purchase inflatable deco - Taobao','Arrange timeline']:
+              ensure_task(p, text, '', False)
+
+          p = ensure_project('m3', "Ormond’s Lunch Menu - Anantara", '', 'ormond')
+          ensure_task(p, "Follow up Ormond’s Lunch Menu - Anantara", '', False)
+
+          # Xiang Ting
+          p = ensure_project('m4', 'Mr DIY Bazaar 2026 (11/9-13/9)', '', 'mr diy bazaar')
+          ensure_task(p, 'Arrange crew payment', '', False)
+          ensure_task(p, 'Update Danwei the daily number of crew that I found', '', False)
+
+          p = ensure_project('m4', 'I-Stays Grand Opening (XX/10)', '', 'i stays grand opening')
+          ensure_task(p, 'Arrange beachflag order', '', False)
+          ensure_task(p, 'Arrange emcee brief — pending rundown from client', '', True)
+          ensure_task(p, 'Event date XX/10 — Pending confirmation', '', True)
+
+          p = ensure_project('m4', 'Temokin VP Event (10-11/10)', '2026-10-10', 'temokin vp event')
+          ensure_task(p, 'Inform vendors the finalized event date and confirm their availability', '2026-09-18', False)
+
+          p = ensure_project('m4', 'Impian Xmas 2026', '', 'impian xmas 2026')
+          ensure_task(p, 'Research more performances standby for Impian Xmas 2026', '', False)
+
+          # Recompute counters so future manual adds never collide.
+          pnums, tnums = [], []
+          for p in projects:
+              m = re.fullmatch(r'p(\d+)', str(p.get('id','')))
+              if m: pnums.append(int(m.group(1)))
+              for t in p.get('tasks', []):
+                  m = re.fullmatch(r't(\d+)', str(t.get('id','')))
+                  if m: tnums.append(int(m.group(1)))
+          data['projectCounter'] = (max(pnums) if pnums else 0) + 1
+          data['taskCounter'] = (max(tnums) if tnums else 0) + 1
+          data['projects'] = projects
+          data['statuses'] = statuses
+
+          payload = json.dumps({'key': KEY, 'value': json.dumps(data, ensure_ascii=False)}).encode('utf-8')
+          req = urllib.request.Request(API, data=payload, headers={'Content-Type':'application/json'}, method='POST')
+          with urllib.request.urlopen(req, timeout=30) as r:
+              print('POST', r.status, r.read().decode())
+
+          # Verify summary from live storage.
+          verified = get_live()
+          names = {'m2':'Xinyee','m3':'Eunice','m4':'Xiang Ting'}
+          for owner in ['m2','m3','m4']:
+              owned = [p for p in verified.get('projects',[]) if p.get('ownerId') == owner]
+              print('\n' + names[owner])
+              for p in owned:
+                  print('-', p.get('title'), '|', len(p.get('tasks',[])), 'tasks', '| due', p.get('dueDate') or '—')
+                  for t in p.get('tasks',[]):
+                      flag = ' WAITING' if t.get('waiting') else ''
+                      print('  ', '[x]' if t.get('done') else '[ ]', t.get('text'), '| due', t.get('dueDate') or '—', flag)
+          PY
