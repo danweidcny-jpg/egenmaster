@@ -1,0 +1,56 @@
+name: Backup EGEN KV
+
+on:
+  push:
+    paths:
+      - '.github/workflows/backup-egen-kv.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch live KV values read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          curl --fail --silent --show-error \
+            'https://egen-master-deck-api.danwei.workers.dev/api/storage?key=brief-bar-data' \
+            -o backup/brief-bar-data-response.json
+          curl --fail --silent --show-error \
+            'https://egen-master-deck-api.danwei.workers.dev/api/storage?key=brief-bar-tasks-data' \
+            -o backup/brief-bar-tasks-data-response.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          pairs = [
+              ('backup/brief-bar-data-response.json', 'backup/brief-bar-data.json'),
+              ('backup/brief-bar-tasks-data-response.json', 'backup/brief-bar-tasks-data.json'),
+          ]
+
+          for src, dst in pairs:
+              obj = json.loads(Path(src).read_text())
+              if 'value' not in obj or obj['value'] is None:
+                  raise SystemExit(f'No KV value returned for {src}')
+              value = obj['value']
+              parsed = json.loads(value) if isinstance(value, str) else value
+              Path(dst).write_text(json.dumps(parsed, ensure_ascii=False, indent=2))
+              print(dst, Path(dst).stat().st_size)
+          PY
+
+          sha256sum backup/brief-bar-data.json backup/brief-bar-tasks-data.json > backup/SHA256SUMS.txt
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EGEN-KV-BACKUP-2026-09-20
+          path: |
+            backup/brief-bar-data.json
+            backup/brief-bar-tasks-data.json
+            backup/SHA256SUMS.txt
+          retention-days: 30
