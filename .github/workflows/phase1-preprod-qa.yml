@@ -1,0 +1,26 @@
+name: Phase 1 Preprod QA
+
+on:
+  push:
+    paths:
+      - 'tests/phase1-preprod-qa.js'
+      - '.github/workflows/phase1-preprod-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Run isolated preview QA
+        run: node tests/phase1-preprod-qa.js
