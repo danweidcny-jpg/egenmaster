@@ -1,0 +1,36 @@
+
+name: Supabase Preview QA
+
+on:
+  push:
+    branches:
+      - phase2-supabase-preview-2026-09-20
+    paths:
+      - 'index.html'
+      - 'egen-master-deck.html'
+      - 'tests/supabase-preview-qa.js'
+      - '.github/workflows/supabase-preview-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start static preview
+        run: |
+          python3 -m http.server 4173 >/tmp/egen-preview.log 2>&1 &
+          sleep 2
+      - name: Run Supabase preview QA
+        run: node tests/supabase-preview-qa.js
