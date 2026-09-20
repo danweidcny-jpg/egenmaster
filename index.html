@@ -495,6 +495,14 @@
     justify-content:center;
     gap:2px;
   }
+  .cal-item.brief{
+    background:rgba(180,50,26,0.12);
+    color:#A52D18;
+    border:1px solid rgba(180,50,26,0.18);
+  }
+  .cal-item.brief .cal-item-owner{
+    color:#A52D18;
+  }
   .cal-item-owner{
     font-size:9px;
     line-height:1.1;
@@ -2824,7 +2832,7 @@ function renderCalendar(){
     const cell=document.createElement('div');
     cell.className='cal-cell'+(ds<today?' past':'')+(ds===today?' today':'')+(items.length?' has-items':'');
     cell.dataset.date=ds;
-    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" draggable="${it.kind==='project'||it.kind==='brief'?'true':'false'}" data-cal-kind="${it.kind}" data-cal-id="${it.id}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><span class="cal-item-owner">${escapeHtml(it.ownerName||'')}</span><span class="cal-item-title">${escapeHtml((it.time?it.time+' · ':'')+it.title)}</span></div>`).join('');
+    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'brief clickable':''}" draggable="${it.kind==='project'||it.kind==='brief'?'true':'false'}" data-cal-kind="${it.kind}" data-cal-id="${it.id}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><span class="cal-item-owner">${escapeHtml(it.ownerName||'')}</span><span class="cal-item-title">${escapeHtml((it.time?it.time+' · ':'')+it.title)}</span></div>`).join('');
     grid.appendChild(cell);
   }
   grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
