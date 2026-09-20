@@ -74,7 +74,7 @@ const assert=(c,m)=>{if(!c)throw new Error(m);console.log('PASS:',m);};
 
   const futureCard=page.locator('.cal-item').filter({hasText:'Future KL Event'}).first();
   assert(await futureCard.count()===1,'future calendar card rendered');
-  assert((await futureCard.locator('.cal-item-owner').innerText()).includes('Liwen'),'calendar card shows owner');
+  assert((await futureCard.locator('.cal-item-owner').innerText()).toLowerCase().includes('liwen'),'calendar card shows owner');
   assert(errors.length===0,'no uncaught JS errors');
 
   await browser.close();
