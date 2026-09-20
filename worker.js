@@ -3,7 +3,7 @@
  *
  * Provides two things the frontend needs once it's hosted outside Claude:
  *
- *  1. GET/POST/DELETE /api/storage
+ *  1. GET/POST /api/storage
  *     A simple key-value store backed by Workers KV. This replaces Claude's
  *     in-artifact `window.storage` for SHARED team data (briefs, tasks,
  *     statuses) — everyone hitting this Worker reads/writes the same KV
@@ -34,9 +34,11 @@
  * ---------------------------------------------------------------------------
  */
 
+const ALLOWED_STORAGE_KEYS = new Set(["brief-bar-data", "brief-bar-tasks-data"]);
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -60,6 +62,7 @@ export default {
       if (request.method === "GET") {
         const key = url.searchParams.get("key");
         if (!key) return json({ error: "Missing key" }, 400);
+        if (!ALLOWED_STORAGE_KEYS.has(key)) return json({ error: "Storage key not allowed" }, 403);
         const value = await env.EGEN_KV.get(key);
         if (value === null) return json({ value: null }, 404);
         return json({ value });
@@ -74,17 +77,12 @@ export default {
         }
         const { key, value } = body || {};
         if (!key) return json({ error: "Missing key" }, 400);
+        if (!ALLOWED_STORAGE_KEYS.has(key)) return json({ error: "Storage key not allowed" }, 403);
         const toStore = typeof value === "string" ? value : JSON.stringify(value);
         await env.EGEN_KV.put(key, toStore);
         return json({ ok: true });
       }
 
-      if (request.method === "DELETE") {
-        const key = url.searchParams.get("key");
-        if (!key) return json({ error: "Missing key" }, 400);
-        await env.EGEN_KV.delete(key);
-        return json({ ok: true });
-      }
 
       return json({ error: "Method not allowed" }, 405);
     }
