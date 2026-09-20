@@ -1839,7 +1839,7 @@ Read the raw client brief below and respond with ONLY a raw JSON object — no m
 {
   "companyClient": string,      // client's company name, cleaned up (drop legal suffixes like "Sdn Bhd", "Pte Ltd", "Inc" if present). Empty string if genuinely not mentioned.
   "eventTypeLabel": string,     // human-readable event type, e.g. "Annual Dinner", "Wedding", "Product Launch", "CNY Trade Dinner"
-  "title": string,              // "{Company Name} {Event Type}", e.g. "Wawasan Agrolipids Annual Dinner". If no company name is given, fall back to "{Event Type} — {headcount} pax".
+  "title": string,              // Always format exactly as "{Client Name} - {Event Type} - {Location}". Use "Client TBC" or "Location TBC" if missing. Do not include headcount in the title.
   "headcount": string,          // e.g. "200 pax", or "" if not specified
   "budget": string,             // e.g. "RM80,000", or "" if not specified
   "venue": string,              // or ""
