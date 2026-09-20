@@ -103,8 +103,8 @@ async function rpc(name,body){
   assert((await page.locator('#currentUserLabel').innerText()).includes('Xinyee'),'preview frontend loads selected user');
   assert((await page.locator('#syncStatus').innerText()).includes('Synced'),'preview frontend syncs via Supabase RPC');
 
-  const toggle=page.locator('[data-task-toggle="t5"]');
-  assert(await toggle.count()===1,'Xinyee task checkbox rendered');
+  const toggle=page.locator('#sectionProjects [data-task-toggle="t5"]');
+  assert(await toggle.count()===1,'Xinyee project task checkbox rendered');
   await toggle.check();
   await page.waitForTimeout(200);
   assert(state.projects[0].tasks[0].done===true && state.projects[0].tasks[0].version===2,'task toggle uses row-level versioned RPC');
