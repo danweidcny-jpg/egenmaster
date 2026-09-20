@@ -55,8 +55,11 @@ const assert=(c,m)=>{if(!c)throw new Error(m);console.log('PASS:',m);};
   assert(body.includes('KL team availability & tasks'),'Chen sees simplified KL workload heading');
   assert(body.includes('Liwen'),'Chen sees KL member Liwen');
   assert(!body.includes('Xinyee'),'Chen dashboard excludes JB member Xinyee');
-  assert(body.includes('Prepare deck'),'Chen can review KL open tasks');
-  assert(!body.includes('Old task'),'completed/past project task not necessarily removed from workload?');
+  const liwenCard=page.locator('details.leader-card').filter({hasText:'Liwen'}).first();
+  await liwenCard.locator('summary').click();
+  const liwenText=await liwenCard.innerText();
+  assert(liwenText.includes('Prepare deck'),'Chen can review KL open tasks');
+  assert(liwenText.includes('Old task'),'overdue unfinished work remains visible in task list');
   
   const masterButtons=page.locator('[data-view="master"]:visible');
   assert(await masterButtons.count()===0,'Master View hidden for Chen');
