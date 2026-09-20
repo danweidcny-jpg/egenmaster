@@ -1205,8 +1205,7 @@
 
 <script>
 /* ---------------------------------------------------------
-   STATE (in-memory only — resets on page reload; this is a
-   working prototype, not wired to a database yet)
+   STATE — hydrated from Supabase for the selected EGEN user
 --------------------------------------------------------- */
 const TEAM = [
   { id:'m1', name:'Danwei (JB)', office:'JB', phone:'' },
@@ -1230,6 +1229,7 @@ let projects = []; // {id, ownerId, title, dueDate, tasks:[{id,text,done,dueDate
 let projectCounter = 1;
 let taskCounter = 1;
 let statuses = {}; // memberId -> 'free' | 'busy' | 'capacity'
+let workloadCounts = {}; // aggregate counts from Supabase for assignment dropdowns
 let schedules = []; // {id,ownerId,title,date,endDate,time,note}
 let scheduleCounter = 1;
 let currentUserId = null; // who is using this device right now
@@ -1351,24 +1351,29 @@ document.getElementById('bottomTabs').addEventListener('click', e=>{
   switchView(btn.dataset.view);
 });
 document.getElementById('switchUserBtn').addEventListener('click', openWhoami);
-document.getElementById('addProjectBtn').addEventListener('click', ()=>{
-  const titleInput = document.getElementById('newProjectTitle');
-  const dueInput = document.getElementById('newProjectDue');
-  const errorEl = document.getElementById('newProjectError');
-  const title = titleInput.value.trim();
+document.getElementById('addProjectBtn').addEventListener('click', async ()=>{
+  const titleInput=document.getElementById('newProjectTitle');
+  const dueInput=document.getElementById('newProjectDue');
+  const errorEl=document.getElementById('newProjectError');
+  const title=titleInput.value.trim();
   if(!currentUserId){ openWhoami(); return; }
   if(!title){
-    errorEl.textContent = 'Give the project a name first.';
-    errorEl.style.display = 'block';
+    errorEl.textContent='Give the project a name first.';
+    errorEl.style.display='block';
     titleInput.focus();
     return;
   }
-  errorEl.style.display = 'none';
-  projects.push({ id:'p'+(projectCounter++), ownerId: currentUserId, title, dueDate: dueInput.value || '', tasks:[], createdAt: todayStr() });
-  titleInput.value = '';
-  dueInput.value = '';
-  saveTasksToStorage();
-  renderBoard();
+  errorEl.style.display='none';
+  const result=await runSupabaseMutation('egen_create_project',{
+    p_actor_user_id:currentUserId,
+    p_title:title,
+    p_due_date:dueInput.value||'',
+    p_created_at:todayStr()
+  });
+  if(result){
+    titleInput.value='';
+    dueInput.value='';
+  }
 });
 
 /* delegated listeners for dynamically-rendered project/task controls */
@@ -1406,9 +1411,10 @@ document.addEventListener('click', (e)=>{
   const statusBtn = e.target.closest('[data-status]');
   if(statusBtn && statusBtn.closest('#myStatusPicker')){
     if(!currentUserId){ openWhoami(); return; }
-    statuses[currentUserId] = statusBtn.dataset.status;
-    saveTasksToStorage();
-    renderBoard();
+    runSupabaseMutation('egen_set_status',{
+      p_actor_user_id:currentUserId,
+      p_status:statusBtn.dataset.status
+    });
     return;
   }
 });
@@ -1437,7 +1443,7 @@ function populateAssigneeSelect(){
     group.label = office + ' office';
     TEAM.filter(m=>m.office===office).forEach(m=>{
       const opt = document.createElement('option');
-      const count = activeBriefCountFor(m.id);
+      const count = (workloadCounts[m.id] && workloadCounts[m.id].activeBriefs) || 0;
       opt.value = m.id;
       opt.textContent = `${m.name} (${count} active)`;
       group.appendChild(opt);
@@ -1956,56 +1962,57 @@ function buildWhatsAppLink(member, brief){
   return `https://wa.me/?text=${encodeURIComponent(msg)}`;
 }
 
-document.getElementById('assignBtn').addEventListener('click', ()=>{
-  if(!pendingResult){ return; }
-  const assigneeId = document.getElementById('assigneeSelect').value;
-  const dueDate = document.getElementById('dueDateInput').value;
-  const confirmEl = document.getElementById('assignConfirm');
+document.getElementById('assignBtn').addEventListener('click', async ()=>{
+  if(!pendingResult) return;
+  if(!currentUserId){ openWhoami(); return; }
+  const assigneeId=document.getElementById('assigneeSelect').value;
+  const dueDate=document.getElementById('dueDateInput').value;
+  const confirmEl=document.getElementById('assignConfirm');
 
   if(!assigneeId){
-    confirmEl.style.display = 'block';
-    confirmEl.style.color = '#B4321A';
-    confirmEl.textContent = 'Pick a team member first.';
+    confirmEl.style.display='block';
+    confirmEl.style.color='#B4321A';
+    confirmEl.textContent='Pick a team member first.';
     return;
   }
   if(!dueDate){
-    confirmEl.style.display = 'block';
-    confirmEl.style.color = '#B4321A';
-    confirmEl.textContent = 'Set a due date first.';
+    confirmEl.style.display='block';
+    confirmEl.style.color='#B4321A';
+    confirmEl.textContent='Set a due date first.';
     return;
   }
 
-  const member = TEAM.find(m=>m.id===assigneeId);
-  const brief = {
-    id: 'b' + (briefCounter++),
-    title: pendingResult.title,
-    rawBrief: pendingResult.rawBrief,
-    points: pendingResult.points,
-    clientAsks: pendingResult.clientAsks,
-    concepts: pendingResult.concepts,
-    effortLevel: pendingResult.effortLevel,
-    effortReason: pendingResult.effortReason,
+  const member=TEAM.find(m=>m.id===assigneeId);
+  const brief={
+    title:pendingResult.title,
+    rawBrief:pendingResult.rawBrief,
+    points:pendingResult.points,
+    clientAsks:pendingResult.clientAsks,
+    concepts:pendingResult.concepts,
+    effortLevel:pendingResult.effortLevel,
+    effortReason:pendingResult.effortReason,
     assigneeId,
     dueDate,
-    status: 'Assigned',
-    createdAt: todayStr(),
-    approvedAt: null,
-    source: 'new-brief',
+    status:'Assigned',
+    createdAt:todayStr(),
+    approvedAt:null,
+    source:'new-brief'
   };
-  briefs.push(brief);
-  saveBriefsToStorage();
+  const result=await runSupabaseMutation('egen_create_brief',{
+    p_actor_user_id:currentUserId,
+    p_brief:brief
+  });
+  if(!result) return;
 
-  const waLink = buildWhatsAppLink(member, brief);
-  confirmEl.style.display = 'block';
-  confirmEl.style.color = 'var(--teal-deep)';
-  confirmEl.innerHTML = `Assigned to ${member.name}, due ${formatDate(dueDate)}. <br><a class="wa-btn" style="margin-top:10px;" href="${waLink}" target="_blank" rel="noopener">Share to Job Brief group</a>`;
+  const savedBrief={...brief,id:result.data && result.data.id ? result.data.id : ''};
+  const waLink=buildWhatsAppLink(member,savedBrief);
+  confirmEl.style.display='block';
+  confirmEl.style.color='var(--teal-deep)';
+  confirmEl.innerHTML=`Assigned to ${member.name}, due ${formatDate(dueDate)}. <br><a class="wa-btn" style="margin-top:10px;" href="${waLink}" target="_blank" rel="noopener">Share to Job Brief group</a>`;
 
-  // reset for next brief
-  pendingResult = null;
-  document.getElementById('rawBrief').value = '';
-  setTimeout(()=>{
-    document.getElementById('resultBlock').style.display = 'none';
-  }, 1400);
+  pendingResult=null;
+  document.getElementById('rawBrief').value='';
+  setTimeout(()=>{document.getElementById('resultBlock').style.display='none';},1400);
 });
 
 /* ---------------------------------------------------------
@@ -2029,68 +2036,80 @@ function allMineDone(){
   if(!tasks.length) return false;
   return tasks.every(t=>t.done);
 }
-function toggleTask(taskId){
-  const wasAllDone = allMineDone();
-  for(const p of projects){
-    if(p.ownerId!==currentUserId) continue;
-    const t = p.tasks.find(x=>x.id===taskId);
-    if(t){ t.done = !t.done; break; }
-  }
-  saveTasksToStorage();
-  renderBoard();
-  if(!wasAllDone && allMineDone()) celebrate();
+async function toggleTask(taskId){
+  const found=findTaskById(taskId);
+  if(!found || found.project.ownerId!==currentUserId) return;
+  const wasAllDone=allMineDone();
+  const result=await runSupabaseMutation('egen_patch_task',{
+    p_actor_user_id:currentUserId,
+    p_id:taskId,
+    p_expected_version:found.task.version,
+    p_changes:{done:!found.task.done}
+  });
+  if(result && !wasAllDone && allMineDone()) celebrate();
 }
-function deleteTask(taskId){
-  for(const p of projects){
-    if(p.ownerId!==currentUserId) continue;
-    const idx = p.tasks.findIndex(x=>x.id===taskId);
-    if(idx > -1){ p.tasks.splice(idx,1); break; }
-  }
-  saveTasksToStorage();
-  renderBoard();
+async function deleteTask(taskId){
+  const found=findTaskById(taskId);
+  if(!found || found.project.ownerId!==currentUserId) return;
+  await runSupabaseMutation('egen_delete_task',{
+    p_actor_user_id:currentUserId,
+    p_id:taskId,
+    p_expected_version:found.task.version
+  });
 }
-function deleteProject(projectId){
-  const idx = projects.findIndex(p=>p.id===projectId && p.ownerId===currentUserId);
-  if(idx > -1) projects.splice(idx,1);
-  saveTasksToStorage();
-  renderBoard();
-}
-function addTaskToProject(projectId){
-  const input = document.querySelector(`[data-new-task="${projectId}"]`);
-  const dateInput = document.querySelector(`[data-new-task-due="${projectId}"]`);
-  if(!input) return;
-  const text = input.value.trim();
-  if(!text) return;
-  const project = projects.find(p=>p.id===projectId && p.ownerId===currentUserId);
-  if(!project) return;
-  project.tasks.push({ id:'t'+(taskCounter++), text, done:false, waiting:false, dueDate: dateInput ? dateInput.value : '' });
-  saveTasksToStorage();
-  renderBoard();
-}
-function toggleWaiting(taskId){
-  for(const p of projects){
-    if(p.ownerId!==currentUserId) continue;
-    const t = p.tasks.find(x=>x.id===taskId);
-    if(t){ t.waiting = !t.waiting; break; }
-  }
-  saveTasksToStorage();
-  renderBoard();
-}
-function updateProjectEventDate(projectId, value){
-  const p = projects.find(x=>x.id===projectId && x.ownerId===currentUserId);
+async function deleteProject(projectId){
+  const p=projects.find(x=>x.id===projectId && x.ownerId===currentUserId);
   if(!p) return;
-  p.dueDate = value || '';
-  saveTasksToStorage();
-  renderBoard();
+  await runSupabaseMutation('egen_delete_project',{
+    p_actor_user_id:currentUserId,
+    p_id:projectId,
+    p_expected_version:p.version
+  });
 }
-function updateTaskDueDate(taskId, value){
-  for(const p of projects){
-    if(p.ownerId!==currentUserId) continue;
-    const t = (p.tasks||[]).find(x=>x.id===taskId);
-    if(t){ t.dueDate = value || ''; break; }
-  }
-  saveTasksToStorage();
-  renderBoard();
+async function addTaskToProject(projectId){
+  const input=document.querySelector(`[data-new-task="${projectId}"]`);
+  const dateInput=document.querySelector(`[data-new-task-due="${projectId}"]`);
+  if(!input) return;
+  const text=input.value.trim();
+  if(!text) return;
+  const project=projects.find(p=>p.id===projectId && p.ownerId===currentUserId);
+  if(!project) return;
+  await runSupabaseMutation('egen_create_task',{
+    p_actor_user_id:currentUserId,
+    p_project_id:projectId,
+    p_text:text,
+    p_due_date:dateInput ? dateInput.value : ''
+  });
+}
+async function toggleWaiting(taskId){
+  const found=findTaskById(taskId);
+  if(!found || found.project.ownerId!==currentUserId) return;
+  await runSupabaseMutation('egen_patch_task',{
+    p_actor_user_id:currentUserId,
+    p_id:taskId,
+    p_expected_version:found.task.version,
+    p_changes:{waiting:!found.task.waiting}
+  });
+}
+async function updateProjectEventDate(projectId,value){
+  const p=projects.find(x=>x.id===projectId && x.ownerId===currentUserId);
+  if(!p) return;
+  await runSupabaseMutation('egen_patch_project',{
+    p_actor_user_id:currentUserId,
+    p_id:projectId,
+    p_expected_version:p.version,
+    p_changes:{dueDate:value||''}
+  });
+}
+async function updateTaskDueDate(taskId,value){
+  const found=findTaskById(taskId);
+  if(!found || found.project.ownerId!==currentUserId) return;
+  await runSupabaseMutation('egen_patch_task',{
+    p_actor_user_id:currentUserId,
+    p_id:taskId,
+    p_expected_version:found.task.version,
+    p_changes:{dueDate:value||''}
+  });
 }
 function buildProjectCardHtml(project, editable){
   const { total, done, overdue } = projectStats(project);
@@ -2429,12 +2448,11 @@ function populateWhoamiGrid(){
       const btn = document.createElement('button');
       btn.className = 'whoami-btn';
       btn.innerHTML = `<span class="avatar">${initials}</span>${m.name}`;
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', async ()=>{
         currentUserId = m.id;
-        saveCurrentUser();
-        renderCurrentUserLabel();
+        await saveCurrentUser();
         closeWhoami();
-        renderBoard();
+        await refreshFromSupabase();
       });
       grid.appendChild(btn);
     });
@@ -2551,16 +2569,18 @@ function renderActiveBriefList(){
   });
 }
 
-function updateBriefStatus(id, newStatus){
-  const brief = briefs.find(b=>b.id===id);
+async function updateBriefStatus(id,newStatus){
+  const brief=briefs.find(b=>b.id===id);
   if(!brief) return;
-  brief.status = newStatus;
-  if(newStatus === 'Approved'){
-    brief.approvedAt = todayStr();
-  }
-  saveBriefsToStorage();
-  renderBoard();
-  if(newStatus === 'Approved'){
+  const changes={status:newStatus};
+  if(newStatus==='Approved') changes.approvedAt=todayStr();
+  const result=await runSupabaseMutation('egen_patch_brief',{
+    p_actor_user_id:currentUserId,
+    p_id:id,
+    p_expected_version:brief.version,
+    p_changes:changes
+  });
+  if(result && newStatus==='Approved'){
     showToast(`✅ "${brief.title}" approved — moved to Archive`);
   }
 }
@@ -2687,23 +2707,27 @@ function getPersonalCalendarEntries(){
   });
   return entries;
 }
-function moveCalendarEntryToDate(kind, id, newDate){
+async function moveCalendarEntryToDate(kind,id,newDate){
   if(kind==='project'){
-    const projectId = id.replace(/^project-/, '');
-    const p = projects.find(x=>x.id===projectId);
+    const projectId=id.replace(/^project-/,'');
+    const p=projects.find(x=>x.id===projectId);
     if(!p) return;
-    p.dueDate = newDate;
-    saveTasksToStorage();
+    await runSupabaseMutation('egen_patch_project',{
+      p_actor_user_id:currentUserId,
+      p_id:projectId,
+      p_expected_version:p.version,
+      p_changes:{dueDate:newDate}
+    });
   }else if(kind==='brief'){
-    const b = briefs.find(x=>x.id===id);
+    const b=briefs.find(x=>x.id===id);
     if(!b) return;
-    b.dueDate = newDate;
-    saveBriefsToStorage();
-  }else{
-    return;
+    await runSupabaseMutation('egen_patch_brief',{
+      p_actor_user_id:currentUserId,
+      p_id:id,
+      p_expected_version:b.version,
+      p_changes:{dueDate:newDate}
+    });
   }
-  renderBoard();
-  renderCalendar();
 }
 function renderCalendar(){
   const scope=calendarScopeLabel();
@@ -2822,29 +2846,10 @@ function escapeHtml(str){
 }
 
 /* ---------------------------------------------------------
-   PERSISTENCE — backed by a small Cloudflare Worker + KV
-   namespace (see worker.js) so the whole team sees the same
-   live data. Set API_BASE to your deployed Worker's URL.
+   PERSISTENCE — Supabase row-level backend (preview)
 --------------------------------------------------------- */
-const API_BASE = 'https://egen-master-deck-api.danwei.workers.dev'; // <-- EDIT ME after deploying worker.js (see DEPLOY-README.md)
-
-async function kvGet(key){
-  const res = await fetch(`${API_BASE}/api/storage?key=${encodeURIComponent(key)}`);
-  if(!res.ok) return null; // 404 = key not set yet, not an error
-  const data = await res.json();
-  return (data && data.value !== undefined) ? data.value : null;
-}
-async function kvSet(key, value){
-  const res = await fetch(`${API_BASE}/api/storage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, value }),
-  });
-  if(!res.ok) throw new Error('KV save failed with status ' + res.status);
-  return true;
-}
-
-const STORAGE_KEY = 'brief-bar-data';
+const SUPABASE_URL = 'https://vpvtpqzjyneznhytiefr.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_mmAr2D7l5NdfmRUvRJpBzw_p8BtVNjb';
 
 function setSyncStatus(text, isError){
   const el = document.getElementById('syncStatus');
@@ -2853,67 +2858,97 @@ function setSyncStatus(text, isError){
   el.style.color = isError ? '#B4321A' : 'var(--muted)';
 }
 
-async function saveBriefsToStorage(){
+async function sbRpc(name, params){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SUPABASE_PUBLISHABLE_KEY,
+      'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY
+    },
+    body:JSON.stringify(params||{})
+  });
+  const text = await res.text();
+  let data = null;
+  try{ data = text ? JSON.parse(text) : null; }catch{ data = text; }
+  if(!res.ok){
+    const message = data && data.message ? data.message : ('Supabase request failed ('+res.status+')');
+    throw new Error(message);
+  }
+  return data;
+}
+
+async function loadDataFromSupabase(){
+  if(!currentUserId) return;
+  setSyncStatus('Syncing...');
+  const data = await sbRpc('egen_bootstrap',{p_actor_user_id:currentUserId});
+  projects = data.projects || [];
+  briefs = data.briefs || [];
+  statuses = data.statuses || {};
+  schedules = data.schedules || [];
+  workloadCounts = data.workloads || {};
+  const counters = data.counters || {};
+  projectCounter = counters.projectCounter || projectCounter || 1;
+  taskCounter = counters.taskCounter || taskCounter || 1;
+  scheduleCounter = counters.scheduleCounter || scheduleCounter || 1;
+  briefCounter = counters.briefCounter || briefCounter || 1;
+  setSyncStatus('Synced ✓');
+}
+
+function renderActiveView(){
+  populateAssigneeSelect();
+  renderCurrentUserLabel();
+  updateMasterViewAccess();
+  const activeView = document.querySelector('.view.active');
+  if(activeView && activeView.id === 'view-team') renderBoard();
+  if(activeView && activeView.id === 'view-calendar') renderCalendar();
+  if(activeView && activeView.id === 'view-archive') renderArchive();
+  if(activeView && activeView.id === 'view-master') renderMasterView();
+}
+
+async function refreshFromSupabase(){
+  try{
+    await loadDataFromSupabase();
+    renderActiveView();
+  }catch(err){
+    console.error('Supabase refresh failed:',err);
+    setSyncStatus('Sync failed',true);
+    showToast('Could not refresh EGEN — check connection.');
+  }
+}
+
+async function runSupabaseMutation(name, params, options={}){
   setSyncStatus('Saving...');
   try{
-    const payload = JSON.stringify({ briefs, briefCounter });
-    await kvSet(STORAGE_KEY, payload);
-    setSyncStatus('Saved ✓');
-  }catch(err){
-    console.error('Failed to save briefs:', err);
-    setSyncStatus('Not saved — check connection', true);
-  }
-}
-
-async function loadBriefsFromStorage(){
-  try{
-    const value = await kvGet(STORAGE_KEY);
-    if(value){
-      const parsed = JSON.parse(value);
-      briefs = parsed.briefs || [];
-      briefCounter = parsed.briefCounter || 1;
+    const result = await sbRpc(name, params);
+    if(result && result.ok === false){
+      if(result.code === 'STALE_WRITE'){
+        showToast('Someone updated this first — latest version loaded.');
+      }else if(result.code === 'FORBIDDEN'){
+        showToast('This item is outside your current EGEN scope.');
+      }else{
+        showToast('Could not save: '+(result.code || 'unknown error'));
+      }
+      await refreshFromSupabase();
+      return null;
     }
-    setSyncStatus('Saved ✓');
+    await refreshFromSupabase();
+    if(options.toast) showToast(options.toast);
+    return result;
   }catch(err){
-    // key not found yet is expected on first-ever use — not an error worth alarming over
-    console.warn('No saved data yet (or failed to load):', err);
-    setSyncStatus('Starting fresh');
+    console.error('Supabase save failed:',err);
+    setSyncStatus('Not saved — check connection',true);
+    showToast('Not saved — check connection.');
+    return null;
   }
 }
 
-/* ---------------------------------------------------------
-   TASKS / PROJECTS — shared storage (same pattern as briefs)
---------------------------------------------------------- */
-const STORAGE_KEY_TASKS = 'brief-bar-tasks-data';
-
-async function saveTasksToStorage(){
-  setSyncStatus('Saving...');
-  try{
-    const payload = JSON.stringify({ projects, projectCounter, taskCounter, statuses, schedules, scheduleCounter });
-    await kvSet(STORAGE_KEY_TASKS, payload);
-    setSyncStatus('Saved ✓');
-  }catch(err){
-    console.error('Failed to save tasks:', err);
-    setSyncStatus('Not saved — check connection', true);
+function findTaskById(taskId){
+  for(const p of projects){
+    const t=(p.tasks||[]).find(x=>x.id===taskId);
+    if(t) return {project:p,task:t};
   }
-}
-
-async function loadTasksFromStorage(){
-  try{
-    const value = await kvGet(STORAGE_KEY_TASKS);
-    if(value){
-      const parsed = JSON.parse(value);
-      projects = parsed.projects || [];
-      projectCounter = parsed.projectCounter || 1;
-      taskCounter = parsed.taskCounter || 1;
-      statuses = parsed.statuses || {};
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-    }
-  }catch(err){
-    // key not found yet is expected on first-ever use
-    console.warn('No saved task data yet (or failed to load):', err);
-  }
+  return null;
 }
 
 /* ---------------------------------------------------------
@@ -2944,18 +2979,15 @@ async function loadCurrentUser(){
 
 /* init */
 async function init(){
-  setSyncStatus('Loading saved data...');
-  await Promise.all([loadBriefsFromStorage(), loadTasksFromStorage(), loadCurrentUser()]);
-  setSyncStatus('Saved ✓');
-  populateAssigneeSelect();
-  renderCurrentUserLabel();
-  updateMasterViewAccess();
-  if(!currentUserId){ openWhoami(); }
-  const activeView = document.querySelector('.view.active');
-  if(activeView && activeView.id === 'view-team') renderBoard();
-  if(activeView && activeView.id === 'view-calendar') renderCalendar();
-  if(activeView && activeView.id === 'view-archive') renderArchive();
-  if(activeView && activeView.id === 'view-master') renderMasterView();
+  setSyncStatus('Loading...');
+  await loadCurrentUser();
+  if(!currentUserId){
+    setSyncStatus('Pick your name');
+    renderCurrentUserLabel();
+    openWhoami();
+    return;
+  }
+  await refreshFromSupabase();
 }
 init();
 </script>
