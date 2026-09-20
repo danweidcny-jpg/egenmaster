@@ -1988,7 +1988,7 @@ document.getElementById('assignBtn').addEventListener('click', ()=>{
     assigneeId,
     dueDate,
     status: 'Assigned',
-    createdAt: new Date().toISOString().slice(0,10),
+    createdAt: todayStr(),
     approvedAt: null,
     source: 'new-brief',
   };
@@ -2012,7 +2012,8 @@ document.getElementById('assignBtn').addEventListener('click', ()=>{
    DAILY TASK / PROJECT TRACKING — helpers
 --------------------------------------------------------- */
 function todayStr(){
-  return new Date().toISOString().slice(0,10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function projectStats(project){
   const total = project.tasks.length;
@@ -2031,6 +2032,7 @@ function allMineDone(){
 function toggleTask(taskId){
   const wasAllDone = allMineDone();
   for(const p of projects){
+    if(p.ownerId!==currentUserId) continue;
     const t = p.tasks.find(x=>x.id===taskId);
     if(t){ t.done = !t.done; break; }
   }
@@ -2040,6 +2042,7 @@ function toggleTask(taskId){
 }
 function deleteTask(taskId){
   for(const p of projects){
+    if(p.ownerId!==currentUserId) continue;
     const idx = p.tasks.findIndex(x=>x.id===taskId);
     if(idx > -1){ p.tasks.splice(idx,1); break; }
   }
@@ -2047,7 +2050,7 @@ function deleteTask(taskId){
   renderBoard();
 }
 function deleteProject(projectId){
-  const idx = projects.findIndex(p=>p.id===projectId);
+  const idx = projects.findIndex(p=>p.id===projectId && p.ownerId===currentUserId);
   if(idx > -1) projects.splice(idx,1);
   saveTasksToStorage();
   renderBoard();
@@ -2058,7 +2061,7 @@ function addTaskToProject(projectId){
   if(!input) return;
   const text = input.value.trim();
   if(!text) return;
-  const project = projects.find(p=>p.id===projectId);
+  const project = projects.find(p=>p.id===projectId && p.ownerId===currentUserId);
   if(!project) return;
   project.tasks.push({ id:'t'+(taskCounter++), text, done:false, waiting:false, dueDate: dateInput ? dateInput.value : '' });
   saveTasksToStorage();
@@ -2066,6 +2069,7 @@ function addTaskToProject(projectId){
 }
 function toggleWaiting(taskId){
   for(const p of projects){
+    if(p.ownerId!==currentUserId) continue;
     const t = p.tasks.find(x=>x.id===taskId);
     if(t){ t.waiting = !t.waiting; break; }
   }
@@ -2073,7 +2077,7 @@ function toggleWaiting(taskId){
   renderBoard();
 }
 function updateProjectEventDate(projectId, value){
-  const p = projects.find(x=>x.id===projectId);
+  const p = projects.find(x=>x.id===projectId && x.ownerId===currentUserId);
   if(!p) return;
   p.dueDate = value || '';
   saveTasksToStorage();
@@ -2081,6 +2085,7 @@ function updateProjectEventDate(projectId, value){
 }
 function updateTaskDueDate(taskId, value){
   for(const p of projects){
+    if(p.ownerId!==currentUserId) continue;
     const t = (p.tasks||[]).find(x=>x.id===taskId);
     if(t){ t.dueDate = value || ''; break; }
   }
@@ -2201,7 +2206,7 @@ function getUpcomingItems(allItems){
   const items = allItems || getAllItemsFlat();
   const today = todayStr();
   const in7 = new Date(); in7.setDate(in7.getDate()+7);
-  const in7Str = in7.toISOString().slice(0,10);
+  const in7Str = `${in7.getFullYear()}-${String(in7.getMonth()+1).padStart(2,'0')}-${String(in7.getDate()).padStart(2,'0')}`;
   return items.filter(t=>!t.done && t.dueDate && t.dueDate > today && t.dueDate <= in7Str)
     .sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
 }
@@ -2292,12 +2297,6 @@ function renderBentoSummary(allItems){
 }
 let activePriorityTab = 'today';
 
-const PRIORITY_EMPTY_STATES = {
-  today:    ['Nothing due today', 'Nothing on the board — tasks or proposals — is due today.'],
-  overdue:  ['Nothing overdue', "Everything's on track right now."],
-  waiting:  ['Nothing pending', 'Flag a task with ⏳, or a proposal lands here once it\'s Submitted and awaiting the client.'],
-  upcoming: ['Nothing on the horizon', 'No deadlines in the next 7 days.'],
-};
 
 function renderPriorityList(allItems){
   const wrap = document.getElementById('priorityList');
@@ -2379,7 +2378,7 @@ function renderLeadershipOverview(){
     const activeBriefs=briefs.filter(b=>b.assigneeId===m.id&&b.status!=='Approved');
     const initials=m.name.split(' ').map(x=>x[0]).slice(0,2).join('');
     const st=STATUS_META[statuses[m.id]||'free']||STATUS_META.free;
-    const projectHtml=ps.length ? ps.map(p=>`<div class="leader-project"><div class="leader-project-head"><div class="leader-project-title">${escapeHtml(p.title)}</div><div class="leader-project-date">${p.dueDate?formatDate(p.dueDate):''}</div></div>${(p.tasks||[]).length?`<ul class="leader-task-list">${p.tasks.map(t=>`<li><input type="checkbox" ${t.done?'checked':''}><span class="leader-task-text ${t.done?'done':''}">${escapeHtml(t.text)}</span>${t.waiting?'<span class="waiting-tag">Waiting</span>':''}${t.dueDate?`<span class="leader-task-note">${formatDate(t.dueDate)}</span>`:''}</li>`).join('')}</ul>`:'<div class="leader-meta">No tasks yet</div>'}</div>`).join('') : '<div class="leader-project"><div class="leader-meta">No active projects</div></div>';
+    const projectHtml=ps.length ? ps.map(p=>`<div class="leader-project"><div class="leader-project-head"><div class="leader-project-title">${escapeHtml(p.title)}</div><div class="leader-project-date">${p.dueDate?formatDate(p.dueDate):''}</div></div>${(p.tasks||[]).length?`<ul class="leader-task-list">${p.tasks.map(t=>`<li><input type="checkbox" ${t.done?'checked':''} disabled aria-label="Read-only task status"><span class="leader-task-text ${t.done?'done':''}">${escapeHtml(t.text)}</span>${t.waiting?'<span class="waiting-tag">Waiting</span>':''}${t.dueDate?`<span class="leader-task-note">${formatDate(t.dueDate)}</span>`:''}</li>`).join('')}</ul>`:'<div class="leader-meta">No tasks yet</div>'}</div>`).join('') : '<div class="leader-project"><div class="leader-meta">No active projects</div></div>';
     const briefsHtml=activeBriefs.length ? `<div class="leader-project"><div class="leader-project-title">Active proposals / briefs</div><ul class="leader-task-list">${activeBriefs.map(b=>`<li><span>📄</span><span>${escapeHtml(b.title)}</span>${b.dueDate?`<span class="leader-task-note">${formatDate(b.dueDate)}</span>`:''}</li>`).join('')}</ul></div>` : '';
     return `<details class="leader-card"><summary><div class="leader-left"><div class="leader-avatar">${initials}</div><div><div class="leader-name">${escapeHtml(m.name)}</div><div class="leader-meta">${m.office} · ${roleFor(m.id)} · ${st.emoji} ${st.label}</div></div></div><div class="leader-counts"><span class="leader-pill">${ps.length} projects</span><span class="leader-pill">${open.length} open</span>${waiting?`<span class="leader-pill waiting">${waiting} waiting</span>`:''}</div></summary><div class="leader-body">${projectHtml}${briefsHtml}</div></details>`;
   }).join('');
@@ -2458,12 +2457,12 @@ function renderBoard(){
   renderMyStatusPicker();
   updateMasterViewAccess();
   const allItems = getAllItemsFlat().filter(it=>it.ownerId===currentUserId); // personal board only
-  renderBentoSummary(allItems);
   renderPriorityList(allItems);
   renderProjectProgressSection();
   renderLeadershipOverview();
 
   const grid = document.getElementById('teamGrid');
+  if(!grid) return;
   grid.innerHTML = '';
 
   ['JB','KL'].forEach(office=>{
@@ -2515,6 +2514,7 @@ function renderBoard(){
 
 function renderActiveBriefList(){
   const wrap = document.getElementById('activeBriefList');
+  if(!wrap) return;
   const active = briefs.filter(b=>b.status !== 'Approved' && b.assigneeId===currentUserId);
   if(!active.length){
     wrap.innerHTML = `<div class="empty-state"><h3>Nothing in progress</h3><p>Assign a brief from the New Brief tab to see it here.</p></div>`;
@@ -2556,7 +2556,7 @@ function updateBriefStatus(id, newStatus){
   if(!brief) return;
   brief.status = newStatus;
   if(newStatus === 'Approved'){
-    brief.approvedAt = new Date().toISOString().slice(0,10);
+    brief.approvedAt = todayStr();
   }
   saveBriefsToStorage();
   renderBoard();
@@ -2642,9 +2642,6 @@ function populateCalPersonSelect(){
   sel.value = calPersonId;
 }
 
-function relevantBriefs(){
-  return briefs.filter(b=>b.status!=='Approved'&&b.assigneeId===currentUserId);
-}
 function calendarDates(start,end){
   const out=[];
   let d=new Date(start+'T00:00:00');
@@ -2910,20 +2907,6 @@ async function loadTasksFromStorage(){
       projectCounter = parsed.projectCounter || 1;
       taskCounter = parsed.taskCounter || 1;
       statuses = parsed.statuses || {};
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
-      schedules = parsed.schedules || [];
-      scheduleCounter = parsed.scheduleCounter || 1;
       schedules = parsed.schedules || [];
       scheduleCounter = parsed.scheduleCounter || 1;
     }
