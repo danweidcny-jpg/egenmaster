@@ -467,29 +467,47 @@
     padding:6px 0;
   }
   .cal-cell{
-    min-height:78px;
-    border-radius:9px;
+    min-height:112px;
+    border-radius:12px;
     background:var(--paper);
     border:1px solid var(--line);
-    padding:6px;
+    padding:8px;
     display:flex;
     flex-direction:column;
-    gap:4px;
+    gap:6px;
   }
   .cal-cell.empty{background:transparent; border:none;}
-  .cal-cell.today{border-color:var(--coral); border-width:2px;}
-  .cal-daynum{font-size:11.5px; font-weight:700; color:var(--muted);}
+  .cal-cell.past{opacity:.48; background:rgba(255,255,255,.35);}
+  .cal-cell.today{border-color:var(--coral); border-width:2px; background:var(--paper-raised);}
+  .cal-daynum{font-size:11.5px; font-weight:800; color:var(--muted);}
   .cal-item{
     font-size:10.5px;
-    font-weight:600;
-    padding:3px 6px;
-    border-radius:6px;
-    background:rgba(31,111,107,0.12);
+    font-weight:650;
+    padding:6px 7px;
+    min-height:42px;
+    border-radius:8px;
+    background:rgba(31,111,107,0.11);
     color:var(--teal-deep);
-    line-height:1.3;
+    line-height:1.25;
     overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:2px;
+  }
+  .cal-item-owner{
+    font-size:9px;
+    line-height:1.1;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.035em;
+    color:var(--muted);
+  }
+  .cal-item-title{
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
   }
   .agenda-row{
     background:var(--paper-raised);
@@ -538,7 +556,7 @@
   }
 
   @media (max-width:600px){
-    .cal-cell{min-height:58px;}
+    .cal-cell{min-height:62px;}
     .cal-item{display:none;}
     .cal-cell.has-items::after{
       content:'';
@@ -977,6 +995,23 @@
   .leader-task-text.done{text-decoration:line-through;color:var(--muted);}
   .leader-task-note{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap;}
 
+  .chen-summary{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+    margin-top:8px;
+  }
+  .chen-stat{
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.42);
+    border-radius:10px;
+    padding:9px 10px;
+  }
+  .chen-stat .n{font-size:15px;font-weight:800;line-height:1;}
+  .chen-stat .l{font-size:9.5px;color:var(--muted);font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.03em;}
+  .chen-help-note{font-size:11px;color:var(--muted);margin-top:6px;}
+  @media(max-width:600px){.chen-summary{grid-template-columns:1fr 1fr 1fr;}}
+
 
   .project-title-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0;}
   .project-date-editor{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-weight:600;}
@@ -1250,7 +1285,7 @@ const STATUS_OPTIONS = ['Assigned','Submitted','Revised','Approved'];
 
 
 function updateMasterViewAccess(){
-  const allowed = isLeadershipUser();
+  const allowed = isManagerUser();
   document.querySelectorAll('[data-view="master"]').forEach(btn=>{
     btn.style.display = allowed ? '' : 'none';
   });
@@ -1288,8 +1323,8 @@ function masterBriefType(b){
 function renderMasterView(){
   const wrap=document.getElementById('masterViewWrap');
   if(!wrap) return;
-  if(!isLeadershipUser()){
-    wrap.innerHTML='<div class="empty-state"><h3>Management access only</h3><p>This view is available to Danwei and Chen.</p></div>';
+  if(!isManagerUser()){
+    wrap.innerHTML='<div class="empty-state"><h3>Manager access only</h3><p>This view is available to Danwei.</p></div>';
     return;
   }
   const all=getMasterBriefs();
@@ -1331,7 +1366,7 @@ function renderMasterView(){
    TAB NAVIGATION
 --------------------------------------------------------- */
 function switchView(view){
-  if(view==='master' && !isLeadershipUser()) view='team';
+  if(view==='master' && !isManagerUser()) view='team';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('#topTabs button, #bottomTabs button').forEach(b=>{
@@ -2375,6 +2410,9 @@ function renderProjectProgressSection(){
 function isLeadershipUser(){
   return ['m1','m5','m6'].includes(currentUserId);
 }
+function isManagerUser(){
+  return currentUserId==='m1' || currentUserId==='m5';
+}
 function roleFor(id){
   if(id==='m1'||id==='m5') return 'Manager';
   if(id==='m6') return 'Senior';
@@ -2388,8 +2426,35 @@ function renderLeadershipOverview(){
     wrap.innerHTML='';
     return;
   }
+
   wrap.style.display='block';
-  wrap.innerHTML=`<div class="eyebrow">Management view</div><h2 class="page-title">Team workload</h2><p class="page-sub">Manager / Senior only — click a person to see their projects and tasks.</p>` + TEAM.map(m=>{
+  const today=todayStr();
+
+  // Chen gets a deliberately simplified KL-only operational view:
+  // availability first, then open work tasks only.
+  if(currentUserId==='m6'){
+    const klTeam=TEAM.filter(m=>m.office==='KL');
+    wrap.innerHTML=`<div class="eyebrow">KL operations</div><h2 class="page-title">KL team availability & tasks</h2><p class="page-sub">See who can help, then open a member to review their current work tasks.</p>` + klTeam.map(m=>{
+      const ps=projects.filter(p=>p.ownerId===m.id);
+      const allTasks=ps.flatMap(p=>(p.tasks||[]).map(t=>({p,t})));
+      const open=allTasks.filter(x=>!x.t.done);
+      const todayTasks=open.filter(x=>!x.t.waiting && (!x.t.dueDate || x.t.dueDate<=today));
+      const upcoming=open.filter(x=>!x.t.waiting && x.t.dueDate && x.t.dueDate>today);
+      const pending=open.filter(x=>x.t.waiting);
+      const initials=m.name.split(' ').map(x=>x[0]).slice(0,2).join('');
+      const st=STATUS_META[statuses[m.id]||'free']||STATUS_META.free;
+      const projectHtml=ps.length ? ps.map(p=>{
+        const openTasks=(p.tasks||[]).filter(t=>!t.done);
+        if(!openTasks.length) return '';
+        return `<div class="leader-project"><div class="leader-project-head"><div class="leader-project-title">${escapeHtml(p.title)}</div><div class="leader-project-date">${p.dueDate?formatDate(p.dueDate):''}</div></div><ul class="leader-task-list">${openTasks.map(t=>`<li><input type="checkbox" disabled aria-label="Read-only task status"><span class="leader-task-text">${escapeHtml(t.text)}</span>${t.waiting?'<span class="waiting-tag">Waiting</span>':''}${t.dueDate?`<span class="leader-task-note">${formatDate(t.dueDate)}</span>`:''}</li>`).join('')}</ul></div>`;
+      }).join('') : '';
+      const body=projectHtml || '<div class="leader-project"><div class="leader-meta">No open work tasks — can assist others.</div></div>';
+      return `<details class="leader-card"><summary><div class="leader-left"><div class="leader-avatar">${initials}</div><div><div class="leader-name">${escapeHtml(m.name)}</div><div class="leader-meta">KL · ${st.emoji} ${st.label}</div><div class="chen-help-note">${open.length===0?'Available to assist':'Current open workload'}</div></div></div><div class="leader-counts"><span class="leader-pill">${open.length} open</span>${pending.length?`<span class="leader-pill waiting">${pending.length} waiting</span>`:''}</div></summary><div class="leader-body"><div class="chen-summary"><div class="chen-stat"><div class="n">${todayTasks.length}</div><div class="l">Today</div></div><div class="chen-stat"><div class="n">${upcoming.length}</div><div class="l">Upcoming</div></div><div class="chen-stat"><div class="n">${pending.length}</div><div class="l">Pending</div></div></div>${body}</div></details>`;
+    }).join('');
+    return;
+  }
+
+  wrap.innerHTML=`<div class="eyebrow">Management view</div><h2 class="page-title">Team workload</h2><p class="page-sub">Click a person to see their projects, tasks and active briefs.</p>` + TEAM.map(m=>{
     const ps=projects.filter(p=>p.ownerId===m.id);
     const allTasks=ps.flatMap(p=>(p.tasks||[]).map(t=>({p,t})));
     const open=allTasks.filter(x=>!x.t.done);
@@ -2676,37 +2741,39 @@ function calendarScopeOwnerIds(){
   return [currentUserId];
 }
 function calendarScopeLabel(){
-  if(currentUserId==='m1' || currentUserId==='m5') return {title:'JB + KL Team Calendar', sub:'All JB & KL project event dates and New Brief proposal / quotation due dates.'};
-  if(currentUserId==='m6') return {title:'KL Team Calendar', sub:'KL team project event dates and New Brief proposal / quotation due dates.'};
-  return {title:'My Calendar', sub:'Project event dates and proposal / quotation due dates only.'};
+  if(currentUserId==='m1' || currentUserId==='m5') return {title:'JB + KL Team Calendar', sub:'Upcoming project event dates and proposal / quotation deadlines. Past events are hidden automatically.'};
+  if(currentUserId==='m6') return {title:'KL Team Calendar', sub:'Upcoming KL team project event dates and proposal / quotation deadlines.'};
+  return {title:'My Calendar', sub:'Upcoming project event dates and proposal / quotation deadlines only.'};
 }
 function getPersonalCalendarEntries(){
   const entries=[];
   const ownerIds=calendarScopeOwnerIds();
   const multi=ownerIds.length>1;
+  const today=todayStr();
   const ownerName=id=>{ const m=TEAM.find(x=>x.id===id); return m?m.name:'Unassigned'; };
 
   briefs.filter(b=>b.status!=='Approved' && ownerIds.includes(b.assigneeId)).forEach(b=>{
-    if(!b.dueDate) return;
+    if(!b.dueDate || b.dueDate<today) return;
     entries.push({
-      id:b.id, kind:'brief', ownerId:b.assigneeId,
-      title: multi ? `${ownerName(b.assigneeId)} · ${b.title}` : b.title,
+      id:b.id, kind:'brief', ownerId:b.assigneeId, ownerName:ownerName(b.assigneeId),
+      title:b.title,
       date:b.dueDate, endDate:b.dueDate, time:'',
       note:'Proposal / quotation due date'
     });
   });
 
   projects.filter(p=>ownerIds.includes(p.ownerId)).forEach(p=>{
-    if(!p.dueDate) return;
+    if(!p.dueDate || p.dueDate<today) return;
     entries.push({
-      id:'project-'+p.id, kind:'project', ownerId:p.ownerId,
-      title: multi ? `${ownerName(p.ownerId)} · ${p.title}` : p.title,
+      id:'project-'+p.id, kind:'project', ownerId:p.ownerId, ownerName:ownerName(p.ownerId),
+      title:p.title,
       date:p.dueDate, endDate:p.dueDate, time:'',
       note:/proposal|quotation/i.test(p.title)?'Proposal / quotation due date':'Project event date'
     });
   });
   return entries;
 }
+
 async function moveCalendarEntryToDate(kind,id,newDate){
   if(kind==='project'){
     const projectId=id.replace(/^project-/,'');
@@ -2749,11 +2816,15 @@ function renderCalendar(){
   for(let i=0;i<offset;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
   for(let d=1;d<=days;d++){
     const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const items=(byDate[ds]||[]).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+    const items=(byDate[ds]||[]).sort((a,b)=>{
+      const owner=(a.ownerName||'').localeCompare(b.ownerName||'');
+      if(owner) return owner;
+      return (a.title||'').localeCompare(b.title||'');
+    });
     const cell=document.createElement('div');
-    cell.className='cal-cell'+(ds===today?' today':'')+(items.length?' has-items':'');
+    cell.className='cal-cell'+(ds<today?' past':'')+(ds===today?' today':'')+(items.length?' has-items':'');
     cell.dataset.date=ds;
-    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" draggable="${it.kind==='project'||it.kind==='brief'?'true':'false'}" data-cal-kind="${it.kind}" data-cal-id="${it.id}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}>${escapeHtml((it.time?it.time+' · ':'')+it.title)}</div>`).join('');
+    cell.innerHTML=`<div class="cal-daynum">${d}</div>`+items.map(it=>`<div class="cal-item ${it.kind==='brief'?'clickable':''}" draggable="${it.kind==='project'||it.kind==='brief'?'true':'false'}" data-cal-kind="${it.kind}" data-cal-id="${it.id}" ${it.kind==='brief'?`data-brief="${it.id}"`:''}><span class="cal-item-owner">${escapeHtml(it.ownerName||'')}</span><span class="cal-item-title">${escapeHtml((it.time?it.time+' · ':'')+it.title)}</span></div>`).join('');
     grid.appendChild(cell);
   }
   grid.querySelectorAll('.cal-item[data-brief]').forEach(el=>el.addEventListener('click',()=>openBriefModal(el.dataset.brief)));
@@ -2781,7 +2852,7 @@ function renderAgenda(relevant){
   const wrap=document.getElementById('calAgenda');
   const sorted=relevant.slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
   if(!sorted.length){
-    wrap.innerHTML='<div class="empty-state"><h3>Nothing scheduled</h3><p>No schedule, task due date, project date, or proposal deadline yet.</p></div>';
+    wrap.innerHTML='<div class="empty-state"><h3>No upcoming events</h3><p>Past events are hidden automatically. Future project dates and proposal deadlines will appear here.</p></div>';
     return;
   }
   wrap.innerHTML=sorted.map(it=>{
